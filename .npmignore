@@ -1,0 +1,72 @@
+# Source files (only include compiled dist/)
+src/
+tsconfig.json
+tsconfig.eslint.json
+eslint.config.js
+
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+ngrok.yml
+logs/
+*.log
+
+# Development tools
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+coverage/
+.nyc_output/
+test/
+tests/
+__tests__/
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# Build artifacts
+*.tsbuildinfo
+.build/
+.cache/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Node modules
+node_modules/
+
+# Git
+.git/
+.gitignore
+
+# CI/CD
+.github/
+.travis.yml
+.circleci/
+azure-pipelines.yml
+.gitlab-ci.yml
+
+# Documentation (except README.md and examples)
+docs/
+CONTRIBUTING.md
+CHANGELOG.md
+
+# Yarn/npm
+yarn.lock
+package-lock.json
+.yarn/
+.pnp.*

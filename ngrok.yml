@@ -1,0 +1,24 @@
+# Ngrok configuration for netsuite-mcp project
+# This config enables detailed HTTP request/response logging using ngrok's built-in features
+
+version: 2
+
+# Detailed logging configuration - ngrok native logging with debug level
+log_level: debug
+log_format: json
+log: logs/ngrok.log
+
+# Web interface configuration for HTTP request inspection
+web_addr: localhost:4040
+
+# Optimize memory allocation for HTTP request inspection (50MB default)
+# Set to larger value to capture more HTTP request/response details
+inspect_db_size: 104857600 # 100MB for detailed request capture
+
+# Tunnel definitions
+tunnels:
+  netsuite-mcp:
+    proto: http
+    addr: 3000
+    # Enable detailed HTTP request/response inspection
+    inspect: true

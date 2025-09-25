@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "netsuite": {
+      "command": "netsuite-mcp-stdio",
+      "env": {
+        "NETSUITE_REST_URL": "https://your-account-id.suitetalk.api.netsuite.com/services/rest/",
+        "NETSUITE_SEARCH_REST_LET": "https://your-account-id.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=customscript_cf_search_rl&deploy=customdeploy_cf_search_rl",
+        "NETSUITE_ACCESS_TOKEN": "your_jwt_access_token_here",
+        "PORT": "3000",
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}
