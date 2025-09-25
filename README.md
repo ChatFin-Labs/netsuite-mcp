@@ -53,12 +53,13 @@ A comprehensive Model Context Protocol (MCP) server for accessing NetSuite data 
    ```bash
    cp .env.example .env
    ```
+2. Install `setup/SuiteScript_SearchRestlet.js` in your NetSuite SuiteScripts as a `RESTLet` and copy the URL for this suite script file.
 
-2. Configure required NetSuite settings:
+3. Configure required NetSuite settings:
    ```bash
    # Required
    NETSUITE_REST_URL=https://your-account-id.suitetalk.api.netsuite.com/services/rest/
-   NETSUITE_SEARCH_REST_LET=https://your-account-id.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=customscript_cf_search_rl&deploy=customdeploy_cf_search_rl
+   NETSUITE_SEARCH_REST_LET=https://your-suite-script-url
    NETSUITE_ACCESS_TOKEN=your_jwt_access_token_here
    
    # Optional

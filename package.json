@@ -11,10 +11,6 @@
     "netsuite",
     "mcp",
     "model-context-protocol",
-    "erp",
-    "api",
-    "restlet",
-    "suiteql",
     "chatfinai"
   ],
   "author": "ChatFinAI <support@chatfin.ai>",
