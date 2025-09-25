@@ -29,6 +29,7 @@
     "LICENSE",
     ".env.example",
     "examples/**/*",
+    "setup/**/*",
     "package.json"
   ],
   "types": "dist/index.d.ts",
