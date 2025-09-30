@@ -2,6 +2,7 @@ import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface GetPaymentsInput {
   CountOnly?: boolean;
@@ -33,32 +34,37 @@ export class GetPayments {
       this.toolName,
       {
         title: 'Get Payments',
-        description: 'Get List of Customer Payments',
-        inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          payments: z
-            .array(
+        description:
+          'Get List of Customer Payments' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
               z.object({
-                Id: z.string().optional().describe('Id of the Payment'),
-                CustomerName: z
-                  .string()
-                  .optional()
-                  .describe('Customer name for which the payment is created'),
-                Amount: z.string().optional().describe('Amount of the Payment'),
-                Date: z.string().optional().describe('Date of the payment'),
+                payments: z
+                  .array(
+                    z.object({
+                      Id: z.string().optional().describe('Id of the Payment'),
+                      CustomerName: z
+                        .string()
+                        .optional()
+                        .describe('Customer name for which the payment is created'),
+                      Amount: z.string().optional().describe('Amount of the Payment'),
+                      Date: z.string().optional().describe('Date of the payment'),
+                    })
+                  )
+                  .describe(
+                    'Array of payment records. Present when CountOnly=false. Each payment represents customer payment data.'
+                  )
+                  .optional(),
+                Count: z
+                  .number()
+                  .int()
+                  .positive()
+                  .describe('Total number of payment records. Present when CountOnly=true.')
+                  .optional(),
               })
             )
-            .describe(
-              'Array of payment records. Present when CountOnly=false. Each payment represents customer payment data.'
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe('Total number of payment records. Present when CountOnly=true.')
-            .optional(),
-        },
+          )}`,
+        inputSchema: NetSuiteHelper.paramSchema,
       },
       async (input: GetPaymentsInput) => {
         const startTime = Date.now();

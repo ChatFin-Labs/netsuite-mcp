@@ -1,8 +1,9 @@
-import { NetSuiteHelper, SuiteQLColumns } from "../helper";
-import { transform } from "../../utils/transform";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-import { logger } from "../../utils/logger";
+import { NetSuiteHelper, SuiteQLColumns } from '../helper';
+import { transform } from '../../utils/transform';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+import { logger } from '../../utils/logger';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface GetAccountingPeriodsInput {
   CountOnly?: boolean;
@@ -20,66 +21,65 @@ interface GetAccountingPeriodsInput {
 }
 
 export class GetAccountingPeriods {
-  private readonly toolName = "get-accounting-periods";
+  private readonly toolName = 'get-accounting-periods';
 
   public register(server: McpServer) {
     server.registerTool(
       this.toolName,
       {
-        title: "Get Accounting Periods",
-        description: "Get List of all accounting periods",
-        inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          accountingPeriods: z
-            .array(
+        title: 'Get Accounting Periods',
+        description:
+          'Get List of all accounting periods' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
               z.object({
-                Id: z.string().optional().describe("Id of the Accounting Period"),
-                StartDate: z.string().optional().describe("Start date of the period"),
-                EndDate: z.string().optional().describe("End date of the period"),
+                accountingPeriods: z
+                  .array(
+                    z.object({
+                      Id: z.string().optional().describe('Id of the Accounting Period'),
+                      StartDate: z.string().optional().describe('Start date of the period'),
+                      EndDate: z.string().optional().describe('End date of the period'),
+                    })
+                  )
+                  .describe(
+                    'Array of accounting period records. Present when CountOnly=false. Each period represents accounting period data.'
+                  )
+                  .optional(),
+                Count: z
+                  .number()
+                  .int()
+                  .positive()
+                  .describe(
+                    'Total number of accounting period records. Present when CountOnly=true.'
+                  )
+                  .optional(),
               })
             )
-            .describe(
-              "Array of accounting period records. Present when CountOnly=false. Each period represents accounting period data."
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe(
-              "Total number of accounting period records. Present when CountOnly=true."
-            )
-            .optional(),
-        },
+          )}`,
+        inputSchema: NetSuiteHelper.paramSchema,
       },
       async (input: GetAccountingPeriodsInput) => {
         const startTime = Date.now();
 
         try {
           // Clean up input - handle empty strings in OrderBy.SortOrder
-          if (input.OrderBy && input.OrderBy.SortOrder === "") {
-            input.OrderBy.SortOrder = "DESC";
+          if (input.OrderBy && input.OrderBy.SortOrder === '') {
+            input.OrderBy.SortOrder = 'DESC';
           }
 
           const sql = `SELECT {Columns} FROM AccountingPeriod ap 
                       WHERE ap.isQuarter = 'F' AND ap.isYear = 'F'`;
 
           const Columns: SuiteQLColumns = {
-            Id: { sql: "ap.Id", type: "number" },
-            StartDate: { sql: "ap.startDate", type: "date" },
-            EndDate: { sql: "ap.endDate", type: "date" },
+            Id: { sql: 'ap.Id', type: 'number' },
+            StartDate: { sql: 'ap.startDate', type: 'date' },
+            EndDate: { sql: 'ap.endDate', type: 'date' },
           };
 
-          const formattedSQL = NetSuiteHelper.formatSQL(
-            sql,
-            Columns,
-            input,
-            "",
-            {
-              Column: "StartDate",
-              SortOrder: "Desc",
-            }
-          );
+          const formattedSQL = NetSuiteHelper.formatSQL(sql, Columns, input, '', {
+            Column: 'StartDate',
+            SortOrder: 'Desc',
+          });
 
           let totalData = [];
           let continueLoop = true;
@@ -92,10 +92,7 @@ export class GetAccountingPeriods {
             }
 
             // Use SuiteQL helper to execute the query
-            const data = await NetSuiteHelper.executeSuiteQL(
-              formattedSQL,
-              dataOffset
-            );
+            const data = await NetSuiteHelper.executeSuiteQL(formattedSQL, dataOffset);
 
             if (input.CountOnly === true) {
               const countResult = { Count: data.count };
@@ -103,7 +100,7 @@ export class GetAccountingPeriods {
               return {
                 content: [
                   {
-                    type: "text",
+                    type: 'text',
                     text: JSON.stringify(countResult, null, 2),
                   },
                 ],
@@ -130,7 +127,7 @@ export class GetAccountingPeriods {
           return {
             content: [
               {
-                type: "text",
+                type: 'text',
                 text: JSON.stringify(finalData, null, 2),
               },
             ],
@@ -138,8 +135,8 @@ export class GetAccountingPeriods {
           };
         } catch (error) {
           logger.error({
-            Module: "getAccountingPeriods",
-            Message: "Error occurred during getAccountingPeriods execution",
+            Module: 'getAccountingPeriods',
+            Message: 'Error occurred during getAccountingPeriods execution',
             ObjectMsg: {
               error: error instanceof Error ? error.message : String(error),
               stack: error instanceof Error ? error.stack : undefined,
@@ -148,13 +145,12 @@ export class GetAccountingPeriods {
             },
           });
 
-          const errorMessage =
-            error instanceof Error ? error.message : "Unknown error occurred";
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
 
           return {
             content: [
               {
-                type: "text",
+                type: 'text',
                 text: JSON.stringify(
                   {
                     error: errorMessage,

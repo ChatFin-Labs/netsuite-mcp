@@ -2,6 +2,7 @@ import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface GetCreditMemoInput {
   CountOnly?: boolean;
@@ -33,32 +34,37 @@ export class GetCreditMemos {
       this.toolName,
       {
         title: 'Get Credit Memos',
-        description: 'Get List of Credit Memos',
-        inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          creditMemos: z
-            .array(
+        description:
+          'Get List of Credit Memos' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
               z.object({
-                Id: z.string().optional().describe('Id of the credit memo'),
-                CustomerName: z
-                  .string()
-                  .optional()
-                  .describe('Customer name for which the credit memo is created'),
-                Amount: z.string().optional().describe('Amount of the Credit Memo'),
-                Date: z.string().optional().describe('Date of the credit memo'),
+                creditMemos: z
+                  .array(
+                    z.object({
+                      Id: z.string().optional().describe('Id of the credit memo'),
+                      CustomerName: z
+                        .string()
+                        .optional()
+                        .describe('Customer name for which the credit memo is created'),
+                      Amount: z.string().optional().describe('Amount of the Credit Memo'),
+                      Date: z.string().optional().describe('Date of the credit memo'),
+                    })
+                  )
+                  .describe(
+                    'Array of credit memo records. Present when CountOnly=false. Each credit memo represents credit memo data.'
+                  )
+                  .optional(),
+                Count: z
+                  .number()
+                  .int()
+                  .positive()
+                  .describe('Total number of credit memo records. Present when CountOnly=true.')
+                  .optional(),
               })
             )
-            .describe(
-              'Array of credit memo records. Present when CountOnly=false. Each credit memo represents credit memo data.'
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe('Total number of credit memo records. Present when CountOnly=true.')
-            .optional(),
-        },
+          )}`,
+        inputSchema: NetSuiteHelper.paramSchema,
       },
       async (input: GetCreditMemoInput) => {
         const startTime = Date.now();

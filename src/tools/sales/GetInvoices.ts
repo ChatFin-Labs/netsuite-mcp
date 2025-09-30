@@ -2,6 +2,7 @@ import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface GetInvoicesInput {
   CountOnly?: boolean;
@@ -50,59 +51,70 @@ export class GetInvoices {
       this.toolName,
       {
         title: 'Get Invoices',
-        description: 'Get List of Open Invoices with detailed information',
-        inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          invoices: z
-            .array(
+        description:
+          'Get List of Open Invoices with detailed information' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
               z.object({
-                Id: z.string().optional().describe('Id of the Invoice'),
-                Number: z.string().optional().describe('Number of the Invoice'),
-                Date: z.string().optional().describe('Date of the Invoice'),
-                Period: z
-                  .string()
-                  .optional()
+                invoices: z
+                  .array(
+                    z.object({
+                      Id: z.string().optional().describe('Id of the Invoice'),
+                      Number: z.string().optional().describe('Number of the Invoice'),
+                      Date: z.string().optional().describe('Date of the Invoice'),
+                      Period: z
+                        .string()
+                        .optional()
+                        .describe(
+                          'Period of the Invoice. Do not use Period for filter, use Date column.'
+                        ),
+                      Account: z
+                        .string()
+                        .optional()
+                        .describe(
+                          'In output, Account is the Name of the Account associated with this Invoice. For Filter, this is the AccountNumber'
+                        ),
+                      Customer: z
+                        .string()
+                        .optional()
+                        .describe('Name of the Customer of this Invoice'),
+                      Status: z
+                        .enum([
+                          'Paid In Full',
+                          'Open',
+                          'Pending Approval',
+                          'Rejected',
+                          'Voided',
+                          'Undefined',
+                        ])
+                        .optional()
+                        .describe('Status of the Invoice'),
+                      Amount: z.number().optional().describe('Amount of the Invoice'),
+                      AmountRemaining: z
+                        .number()
+                        .optional()
+                        .describe('Amount Remaining of the Invoice'),
+                      DueDate: z
+                        .string()
+                        .optional()
+                        .describe('Due Date of the Invoice. This is the Date part only'),
+                      Memo: z.string().optional().describe('Memo of the Invoice'),
+                    })
+                  )
                   .describe(
-                    'Period of the Invoice. Do not use Period for filter, use Date column.'
-                  ),
-                Account: z
-                  .string()
-                  .optional()
-                  .describe(
-                    'In output, Account is the Name of the Account associated with this Invoice. For Filter, this is the AccountNumber'
-                  ),
-                Customer: z.string().optional().describe('Name of the Customer of this Invoice'),
-                Status: z
-                  .enum([
-                    'Paid In Full',
-                    'Open',
-                    'Pending Approval',
-                    'Rejected',
-                    'Voided',
-                    'Undefined',
-                  ])
-                  .optional()
-                  .describe('Status of the Invoice'),
-                Amount: z.number().optional().describe('Amount of the Invoice'),
-                AmountRemaining: z.number().optional().describe('Amount Remaining of the Invoice'),
-                DueDate: z
-                  .string()
-                  .optional()
-                  .describe('Due Date of the Invoice. This is the Date part only'),
-                Memo: z.string().optional().describe('Memo of the Invoice'),
+                    'Array of invoice records. Present when CountOnly=false. Each invoice represents invoice data.'
+                  )
+                  .optional(),
+                Count: z
+                  .number()
+                  .int()
+                  .positive()
+                  .describe('Total number of invoice records. Present when CountOnly=true.')
+                  .optional(),
               })
             )
-            .describe(
-              'Array of invoice records. Present when CountOnly=false. Each invoice represents invoice data.'
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe('Total number of invoice records. Present when CountOnly=true.')
-            .optional(),
-        },
+          )}`,
+        inputSchema: NetSuiteHelper.paramSchema,
       },
       async (input: GetInvoicesInput) => {
         const startTime = Date.now();

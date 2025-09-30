@@ -2,6 +2,7 @@ import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface GetPostingPeriodInput {
   CountOnly?: boolean;
@@ -31,44 +32,53 @@ export class GetPostingPeriod {
       this.toolName,
       {
         title: 'Get Posting Period',
-        description: 'Get List of all posting periods',
-        inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          postingPeriods: z
-            .array(
+        description:
+          'Get List of all posting periods' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
               z.object({
-                Id: z.string().optional().describe('Id of the posting period'),
-                Name: z.string().optional().describe('Period name'),
+                postingPeriods: z
+                  .array(
+                    z.object({
+                      Id: z.string().optional().describe('Id of the posting period'),
+                      Name: z.string().optional().describe('Period name'),
+                    })
+                  )
+                  .describe(
+                    'Array of posting period records. Present when CountOnly=false. Each posting period represents accounting period data.'
+                  )
+                  .optional(),
+                Count: z
+                  .number()
+                  .int()
+                  .positive()
+                  .describe('Total number of posting period records. Present when CountOnly=true.')
+                  .optional(),
               })
             )
-            .describe(
-              'Array of posting period records. Present when CountOnly=false. Each posting period represents accounting period data.'
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe(
-              'Total number of posting period records. Present when CountOnly=true.'
-            )
-            .optional(),
-        },
+          )}`,
+        inputSchema: NetSuiteHelper.paramSchema,
       },
       async (input: GetPostingPeriodInput) => {
         const startTime = Date.now();
 
         try {
           // Use the searchRestlet helper method - equivalent to the old Implement method
-          const result = await NetSuiteHelper.searchRestlet('accountingperiod', this.Columns, input, [], {
-            Column: 'Id',
-            SortOrder: 'ASC',
-          });
+          const result = await NetSuiteHelper.searchRestlet(
+            'accountingperiod',
+            this.Columns,
+            input,
+            [],
+            {
+              Column: 'Id',
+              SortOrder: 'ASC',
+            }
+          );
 
           // Handle count-only response
           if (input.CountOnly === true) {
             const countResult = result as { Count: number };
-            
+
             logger.info({
               Module: 'getPostingPeriod',
               Message: 'Successfully retrieved posting periods count',

@@ -2,6 +2,7 @@ import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface GetCustomersInput {
   CountOnly?: boolean;
@@ -37,35 +38,44 @@ export class GetCustomers {
       this.toolName,
       {
         title: 'Get Customers',
-        description: 'Get List of all Customers with contact information',
-        inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          customers: z
-            .array(
+        description:
+          'Get List of all Customers with contact information' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
               z.object({
-                Id: z.string().optional().describe('Id of the Customer'),
-                Name: z.string().optional().describe('Name of the Customer'),
-                Email: z.string().optional().describe('Email of the Customer'),
-                Phone: z.string().optional().describe('Phone number of the Customer'),
-                OfficePhone: z.string().optional().describe('Alternate Phone number of the Customer'),
-                Fax: z.string().optional().describe('Fax of the Customer'),
-                PrimaryContact: z.string().optional().describe('Primary Contact of the Customer'),
-                AltEmail: z.string().optional().describe('Alternate Email of the Customer'),
+                customers: z
+                  .array(
+                    z.object({
+                      Id: z.string().optional().describe('Id of the Customer'),
+                      Name: z.string().optional().describe('Name of the Customer'),
+                      Email: z.string().optional().describe('Email of the Customer'),
+                      Phone: z.string().optional().describe('Phone number of the Customer'),
+                      OfficePhone: z
+                        .string()
+                        .optional()
+                        .describe('Alternate Phone number of the Customer'),
+                      Fax: z.string().optional().describe('Fax of the Customer'),
+                      PrimaryContact: z
+                        .string()
+                        .optional()
+                        .describe('Primary Contact of the Customer'),
+                      AltEmail: z.string().optional().describe('Alternate Email of the Customer'),
+                    })
+                  )
+                  .describe(
+                    'Array of customer records. Present when CountOnly=false. Each customer represents customer data with contact information.'
+                  )
+                  .optional(),
+                Count: z
+                  .number()
+                  .int()
+                  .positive()
+                  .describe('Total number of customer records. Present when CountOnly=true.')
+                  .optional(),
               })
             )
-            .describe(
-              'Array of customer records. Present when CountOnly=false. Each customer represents customer data with contact information.'
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe(
-              'Total number of customer records. Present when CountOnly=true.'
-            )
-            .optional(),
-        },
+          )}`,
+        inputSchema: NetSuiteHelper.paramSchema,
       },
       async (input: GetCustomersInput) => {
         const startTime = Date.now();
@@ -80,7 +90,7 @@ export class GetCustomers {
           // Handle count-only response
           if (input.CountOnly === true) {
             const countResult = result as { Count: number };
-            
+
             logger.info({
               Module: 'getCustomers',
               Message: 'Successfully retrieved customer count',

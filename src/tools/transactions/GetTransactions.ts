@@ -2,6 +2,7 @@ import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface GetTransactionsInput {
   CountOnly?: boolean;
@@ -72,70 +73,80 @@ export class GetTransactions {
       this.toolName,
       {
         title: 'Get Transactions',
-        description: 'Get List of Entries or Transactions',
-        inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          transactions: z
-            .array(
+        description:
+          'Get List of Entries or Transactions' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
               z.object({
-                Id: z.string().optional().describe('Id of the Transaction'),
-                Date: z.string().optional().describe('Date of the Transaction'),
-                Period: z
-                  .string()
-                  .optional()
-                  .describe('Period of the Entry. Use Date column instead of Period for filter.'),
-                Type: z
-                  .enum(['Bill', 'Bill Credit', 'Bill Payment', 'Journal'])
-                  .optional()
-                  .describe('Type of Transaction'),
-                DocumentNumber: z.string().optional().describe('Document Number'),
-                Name: z.string().optional().describe('Name of the entity'),
-                Account: z
-                  .string()
-                  .optional()
+                transactions: z
+                  .array(
+                    z.object({
+                      Id: z.string().optional().describe('Id of the Transaction'),
+                      Date: z.string().optional().describe('Date of the Transaction'),
+                      Period: z
+                        .string()
+                        .optional()
+                        .describe(
+                          'Period of the Entry. Use Date column instead of Period for filter.'
+                        ),
+                      Type: z
+                        .enum(['Bill', 'Bill Credit', 'Bill Payment', 'Journal'])
+                        .optional()
+                        .describe('Type of Transaction'),
+                      DocumentNumber: z.string().optional().describe('Document Number'),
+                      Name: z.string().optional().describe('Name of the entity'),
+                      Account: z
+                        .string()
+                        .optional()
+                        .describe(
+                          'In output, Account is the Name of the Account associated with this bill. For Filter, this is the AccountNumber'
+                        ),
+                      Product: z
+                        .string()
+                        .optional()
+                        .describe('Product/Class associated with transaction'),
+                      Location: z
+                        .string()
+                        .optional()
+                        .describe('Location associated with transaction'),
+                      Memo: z.string().optional().describe('Memo of the Transaction'),
+                      Amount: z.number().optional().describe('Amount of the Transaction'),
+                      Department: z
+                        .string()
+                        .optional()
+                        .describe('Department associated with transaction'),
+                      Status: z
+                        .enum([
+                          'Approved for Posting',
+                          'Paid In Full',
+                          'Open',
+                          'Pending Approval',
+                          'Rejected',
+                          'Voided',
+                          'Undefined',
+                        ])
+                        .optional()
+                        .describe('Status of the Transaction'),
+                      Subsidiary: z
+                        .string()
+                        .optional()
+                        .describe('Subsidiary associated with transaction'),
+                    })
+                  )
                   .describe(
-                    'In output, Account is the Name of the Account associated with this bill. For Filter, this is the AccountNumber'
-                  ),
-                Product: z
-                  .string()
-                  .optional()
-                  .describe('Product/Class associated with transaction'),
-                Location: z.string().optional().describe('Location associated with transaction'),
-                Memo: z.string().optional().describe('Memo of the Transaction'),
-                Amount: z.number().optional().describe('Amount of the Transaction'),
-                Department: z
-                  .string()
-                  .optional()
-                  .describe('Department associated with transaction'),
-                Status: z
-                  .enum([
-                    'Approved for Posting',
-                    'Paid In Full',
-                    'Open',
-                    'Pending Approval',
-                    'Rejected',
-                    'Voided',
-                    'Undefined',
-                  ])
-                  .optional()
-                  .describe('Status of the Transaction'),
-                Subsidiary: z
-                  .string()
-                  .optional()
-                  .describe('Subsidiary associated with transaction'),
+                    'Array of transaction records. Present when CountOnly=false. Each transaction represents transaction/entry data.'
+                  )
+                  .optional(),
+                Count: z
+                  .number()
+                  .int()
+                  .positive()
+                  .describe('Total number of transaction records. Present when CountOnly=true.')
+                  .optional(),
               })
             )
-            .describe(
-              'Array of transaction records. Present when CountOnly=false. Each transaction represents transaction/entry data.'
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe('Total number of transaction records. Present when CountOnly=true.')
-            .optional(),
-        },
+          )}`,
+        inputSchema: NetSuiteHelper.paramSchema,
       },
       async (input: GetTransactionsInput) => {
         const startTime = Date.now();

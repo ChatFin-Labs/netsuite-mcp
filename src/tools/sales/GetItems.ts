@@ -2,6 +2,7 @@ import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface GetItemsInput {
   CountOnly?: boolean;
@@ -35,33 +36,36 @@ export class GetItems {
       this.toolName,
       {
         title: 'Get Items',
-        description: 'Get List of all sellable Items with details',
-        inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          items: z
-            .array(
+        description:
+          'Get List of all sellable Items with details' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
               z.object({
-                InternalId: z.string().optional().describe('Id of the Item'),
-                Name: z.string().optional().describe('Name of the Item'),
-                DisplayName: z.string().optional().describe('Display name of the Item'),
-                Description: z.string().optional().describe('Description about the item'),
-                Type: z.string().optional().describe('Type of the item'),
-                BasePrice: z.string().optional().describe('Base price of the item'),
+                items: z
+                  .array(
+                    z.object({
+                      InternalId: z.string().optional().describe('Id of the Item'),
+                      Name: z.string().optional().describe('Name of the Item'),
+                      DisplayName: z.string().optional().describe('Display name of the Item'),
+                      Description: z.string().optional().describe('Description about the item'),
+                      Type: z.string().optional().describe('Type of the item'),
+                      BasePrice: z.string().optional().describe('Base price of the item'),
+                    })
+                  )
+                  .describe(
+                    'Array of item records. Present when CountOnly=false. Each item represents sellable item data.'
+                  )
+                  .optional(),
+                Count: z
+                  .number()
+                  .int()
+                  .positive()
+                  .describe('Total number of item records. Present when CountOnly=true.')
+                  .optional(),
               })
             )
-            .describe(
-              'Array of item records. Present when CountOnly=false. Each item represents sellable item data.'
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe(
-              'Total number of item records. Present when CountOnly=true.'
-            )
-            .optional(),
-        },
+          )}`,
+        inputSchema: NetSuiteHelper.paramSchema,
       },
       async (input: GetItemsInput) => {
         const startTime = Date.now();
@@ -76,7 +80,7 @@ export class GetItems {
           // Handle count-only response
           if (input.CountOnly === true) {
             const countResult = result as { Count: number };
-            
+
             logger.info({
               Module: 'getItems',
               Message: 'Successfully retrieved items count',

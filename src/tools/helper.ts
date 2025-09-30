@@ -828,7 +828,8 @@ export class NetSuiteHelper {
       const dateFilter = params.Filters?.find(
         (fil: FilterParam) => fil.Column === 'Date' || fil.Column === 'DueDate'
       );
-      if (!dateFilter) this.error('Date filter is required, as data is too much otherwise', 'AIErr');
+      if (!dateFilter)
+        this.error('Date filter is required, as data is too much otherwise', 'AIErr');
     }
   }
 }

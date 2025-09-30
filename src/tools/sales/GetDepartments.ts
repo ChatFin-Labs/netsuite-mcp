@@ -2,6 +2,7 @@ import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface GetDepartmentInput {
   CountOnly?: boolean;
@@ -31,35 +32,38 @@ export class GetDepartments {
       this.toolName,
       {
         title: 'Get Departments',
-        description: 'Get List of all Departments',
-        inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          departments: z
-            .array(
+        description:
+          'Get List of all Departments' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
               z.object({
-                Id: z.string().optional().describe('Id of the Department'),
-                Name: z.string().optional().describe('Name of the Department'),
+                departments: z
+                  .array(
+                    z.object({
+                      Id: z.string().optional().describe('Id of the Department'),
+                      Name: z.string().optional().describe('Name of the Department'),
+                    })
+                  )
+                  .describe(
+                    'Array of department records. Present when CountOnly=false. Each department represents department data.'
+                  )
+                  .optional(),
+                Count: z
+                  .number()
+                  .int()
+                  .positive()
+                  .describe('Total number of department records. Present when CountOnly=true.')
+                  .optional(),
               })
             )
-            .describe(
-              'Array of department records. Present when CountOnly=false. Each department represents department data.'
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe(
-              'Total number of department records. Present when CountOnly=true.'
-            )
-            .optional(),
-        },
+          )}`,
+        inputSchema: NetSuiteHelper.paramSchema,
       },
       async (input: GetDepartmentInput) => {
         const startTime = Date.now();
 
         try {
-          // Use the searchRestlet helper method - equivalent to the old Implement method  
+          // Use the searchRestlet helper method - equivalent to the old Implement method
           const result = await NetSuiteHelper.searchRestlet('department', this.Columns, input, [], {
             Column: 'Id',
             SortOrder: 'ASC',
@@ -68,7 +72,7 @@ export class GetDepartments {
           // Handle count-only response
           if (input.CountOnly === true) {
             const countResult = result as { Count: number };
-            
+
             logger.info({
               Module: 'getDepartment',
               Message: 'Successfully retrieved department count',

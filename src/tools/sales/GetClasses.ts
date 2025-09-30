@@ -2,6 +2,7 @@ import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface GetClassInput {
   CountOnly?: boolean;
@@ -31,44 +32,53 @@ export class GetClasses {
       this.toolName,
       {
         title: 'Get Classes',
-        description: 'Get List of all Classes (Classifications)',
-        inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          classes: z
-            .array(
+        description:
+          'Get List of all Classes (Classifications)' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
               z.object({
-                Id: z.string().optional().describe('Id of the Class'),
-                Name: z.string().optional().describe('Name of the Class'),
+                classes: z
+                  .array(
+                    z.object({
+                      Id: z.string().optional().describe('Id of the Class'),
+                      Name: z.string().optional().describe('Name of the Class'),
+                    })
+                  )
+                  .describe(
+                    'Array of class records. Present when CountOnly=false. Each class represents classification data.'
+                  )
+                  .optional(),
+                Count: z
+                  .number()
+                  .int()
+                  .positive()
+                  .describe('Total number of class records. Present when CountOnly=true.')
+                  .optional(),
               })
             )
-            .describe(
-              'Array of class records. Present when CountOnly=false. Each class represents classification data.'
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe(
-              'Total number of class records. Present when CountOnly=true.'
-            )
-            .optional(),
-        },
+          )}`,
+        inputSchema: NetSuiteHelper.paramSchema,
       },
       async (input: GetClassInput) => {
         const startTime = Date.now();
 
         try {
           // Use the searchRestlet helper method - equivalent to the old Implement method
-          const result = await NetSuiteHelper.searchRestlet('classification', this.Columns, input, [], {
-            Column: 'Id',
-            SortOrder: 'ASC',
-          });
+          const result = await NetSuiteHelper.searchRestlet(
+            'classification',
+            this.Columns,
+            input,
+            [],
+            {
+              Column: 'Id',
+              SortOrder: 'ASC',
+            }
+          );
 
           // Handle count-only response
           if (input.CountOnly === true) {
             const countResult = result as { Count: number };
-            
+
             logger.info({
               Module: 'getClass',
               Message: 'Successfully retrieved class count',

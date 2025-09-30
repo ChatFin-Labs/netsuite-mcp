@@ -1,8 +1,9 @@
-import { NetSuiteHelper, SuiteQLColumns } from "../helper";
-import { transform } from "../../utils/transform";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-import { logger } from "../../utils/logger";
+import { NetSuiteHelper, SuiteQLColumns } from '../helper';
+import { transform } from '../../utils/transform';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+import { logger } from '../../utils/logger';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 interface GetAccountsInput {
   CountOnly?: boolean;
@@ -20,86 +21,79 @@ interface GetAccountsInput {
 }
 
 export class GetAccounts {
-  private readonly toolName = "get-accounts";
+  private readonly toolName = 'get-accounts';
   private readonly accountTypes = process.env.NETSUITE_ACCOUNT_TYPES
-    ? process.env.NETSUITE_ACCOUNT_TYPES.split(",").map((type) => type.trim())
+    ? process.env.NETSUITE_ACCOUNT_TYPES.split(',').map((type) => type.trim())
     : [];
 
   public register(server: McpServer) {
     server.registerTool(
       this.toolName,
       {
-        title: "Get Accounts",
+        title: 'Get Accounts',
         description:
-          "Get List of Accounts, this can be used to get all Accounts or specific Accounts information",
-        inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          accounts: z
-            .array(
+          'Get List of Accounts, this can be used to get all Accounts or specific Accounts information' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
               z.object({
-                Id: z.string().optional().describe("Id of the Account"),
-                Name: z.string().optional().describe("Name of the Account"),
-                AccountNumber: z
-                  .string()
-                  .optional()
-                  .describe("Number of the Account"),
-                ParentNumber: z
-                  .string()
-                  .optional()
-                  .describe(
-                    "Parent Number of the Account. Hierarchy can be created by referencing this with AccountNumber property"
-                  ),
-                Type:
-                  this.accountTypes.length > 0
-                    ? z
-                        .enum(this.accountTypes as [string, ...string[]])
+                accounts: z
+                  .array(
+                    z.object({
+                      Id: z.string().optional().describe('Id of the Account'),
+                      Name: z.string().optional().describe('Name of the Account'),
+                      AccountNumber: z.string().optional().describe('Number of the Account'),
+                      ParentNumber: z
+                        .string()
                         .optional()
-                        .describe("Type of the Account")
-                    : z.string().optional().describe("Type of the Account"),
+                        .describe(
+                          'Parent Number of the Account. Hierarchy can be created by referencing this with AccountNumber property'
+                        ),
+                      Type:
+                        this.accountTypes.length > 0
+                          ? z
+                              .enum(this.accountTypes as [string, ...string[]])
+                              .optional()
+                              .describe('Type of the Account')
+                          : z.string().optional().describe('Type of the Account'),
+                    })
+                  )
+                  .describe(
+                    'Array of account records. Present when CountOnly=false. Each account represents account data.'
+                  )
+                  .optional(),
+                Count: z
+                  .number()
+                  .int()
+                  .positive()
+                  .describe('Total number of account records. Present when CountOnly=true.')
+                  .optional(),
               })
             )
-            .describe(
-              "Array of account records. Present when CountOnly=false. Each account represents account data."
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe(
-              "Total number of account records. Present when CountOnly=true."
-            )
-            .optional(),
-        },
+          )}`,
+        inputSchema: NetSuiteHelper.paramSchema,
       },
       async (input: GetAccountsInput) => {
         const startTime = Date.now();
 
         try {
           // Clean up input - handle empty strings in OrderBy.SortOrder
-          if (input.OrderBy && input.OrderBy.SortOrder === "") {
-            input.OrderBy.SortOrder = "ASC";
+          if (input.OrderBy && input.OrderBy.SortOrder === '') {
+            input.OrderBy.SortOrder = 'ASC';
           }
           const sql = `SELECT {Columns} FROM Account a`;
 
           const Columns: SuiteQLColumns = {
-            Id: { sql: "a.Id", type: "number" },
-            Name: { sql: "a.accountSearchDisplayNameCopy", type: "string" },
-            AccountNumber: { sql: "a.acctNumber", type: "string" },
-            ParentId: { sql: "a.parent", type: "number" },
-            Type: { sql: "BUILTIN.DF(a.acctType)", type: "string" },
+            Id: { sql: 'a.Id', type: 'number' },
+            Name: { sql: 'a.accountSearchDisplayNameCopy', type: 'string' },
+            AccountNumber: { sql: 'a.acctNumber', type: 'string' },
+            ParentId: { sql: 'a.parent', type: 'number' },
+            Type: { sql: 'BUILTIN.DF(a.acctType)', type: 'string' },
           };
 
-          const formattedSQL = NetSuiteHelper.formatSQL(
-            sql,
-            Columns,
-            input,
-            "",
-            {
-              Column: "Name",
-              SortOrder: "Asc",
-            }
-          );
+          const formattedSQL = NetSuiteHelper.formatSQL(sql, Columns, input, '', {
+            Column: 'Name',
+            SortOrder: 'Asc',
+          });
 
           // Get SuiteQL tool handler - we'll need to call SuiteQL with the formatted query
           // For now, placeholder data structure matching v1 pattern
@@ -114,10 +108,7 @@ export class GetAccounts {
             }
 
             // Use SuiteQL helper to execute the query (v1 pattern)
-            const data = await NetSuiteHelper.executeSuiteQL(
-              formattedSQL,
-              dataOffset
-            );
+            const data = await NetSuiteHelper.executeSuiteQL(formattedSQL, dataOffset);
 
             if (input.CountOnly === true) {
               const countResult = { Count: data.count };
@@ -125,7 +116,7 @@ export class GetAccounts {
               return {
                 content: [
                   {
-                    type: "text",
+                    type: 'text',
                     text: JSON.stringify(countResult, null, 2),
                   },
                 ],
@@ -155,7 +146,7 @@ export class GetAccounts {
           return {
             content: [
               {
-                type: "text",
+                type: 'text',
                 text: JSON.stringify(finalData, null, 2),
               },
             ],
@@ -163,8 +154,8 @@ export class GetAccounts {
           };
         } catch (error) {
           logger.error({
-            Module: "getAccounts",
-            Message: "Error occurred during getAccounts execution",
+            Module: 'getAccounts',
+            Message: 'Error occurred during getAccounts execution',
             ObjectMsg: {
               error: error instanceof Error ? error.message : String(error),
               stack: error instanceof Error ? error.stack : undefined,
@@ -173,13 +164,12 @@ export class GetAccounts {
             },
           });
 
-          const errorMessage =
-            error instanceof Error ? error.message : "Unknown error occurred";
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
 
           return {
             content: [
               {
-                type: "text",
+                type: 'text',
                 text: JSON.stringify(
                   {
                     error: errorMessage,

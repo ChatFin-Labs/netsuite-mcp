@@ -3,6 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
 import { fuzzySearch } from '../../utils/fuzzySearch';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface CustomerDetailsInput {
   searchValue: string;
@@ -16,17 +17,22 @@ export class GetCustomerDetails {
       this.toolName,
       {
         title: 'Get Customer Details',
-        description: 'Find a specific customer by name or ID with fuzzy search capabilities',
+        description:
+          'Find a specific customer by name or ID with fuzzy search capabilities' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
+              z.object({
+                customer: z
+                  .object({
+                    Id: z.number().describe('ID of the Customer'),
+                    Name: z.string().describe('Name of the Customer'),
+                  })
+                  .describe('The matched customer details'),
+              })
+            )
+          )}`,
         inputSchema: {
           searchValue: z.string().describe('Customer name or ID to search for'),
-        },
-        outputSchema: {
-          customer: z
-            .object({
-              Id: z.number().describe('ID of the Customer'),
-              Name: z.string().describe('Name of the Customer'),
-            })
-            .describe('The matched customer details'),
         },
       },
       async (input: CustomerDetailsInput) => {

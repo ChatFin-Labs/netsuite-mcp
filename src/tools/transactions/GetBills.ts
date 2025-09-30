@@ -2,6 +2,7 @@ import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface GetBillsInput {
   CountOnly?: boolean;
@@ -83,63 +84,79 @@ export class GetBills {
       this.toolName,
       {
         title: 'Get Bills',
-        description: 'Get List of Bills of Vendors',
-        inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          bills: z
-            .array(
+        description:
+          'Get List of Bills of Vendors' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
               z.object({
-                Id: z.string().optional().describe('Id of the Bill'),
-                Date: z.string().optional().describe('Date of the Bill'),
-                Period: z
-                  .string()
-                  .optional()
-                  .describe('Period of the Bill. Use Date column instead of Period for filter.'),
-                LastBillPaymentDate: z.string().optional().describe('Last bill payment date'),
-                Type: z
-                  .enum(['Bill', 'Bill Credit', 'Bill Payment'])
-                  .optional()
-                  .describe('Type of Bill'),
-                DocumentNumber: z.string().optional().describe('Document Number'),
-                TransactionNumber: z.string().optional().describe('Transaction Number'),
-                Memo: z.string().optional().describe('Memo of the Bill'),
-                Amount: z.number().optional().describe('Amount of the Bill'),
-                Account: z
-                  .string()
-                  .optional()
+                bills: z
+                  .array(
+                    z.object({
+                      Id: z.string().optional().describe('Id of the Bill'),
+                      Date: z.string().optional().describe('Date of the Bill'),
+                      Period: z
+                        .string()
+                        .optional()
+                        .describe(
+                          'Period of the Bill. Use Date column instead of Period for filter.'
+                        ),
+                      LastBillPaymentDate: z.string().optional().describe('Last bill payment date'),
+                      Type: z
+                        .enum(['Bill', 'Bill Credit', 'Bill Payment'])
+                        .optional()
+                        .describe('Type of Bill'),
+                      DocumentNumber: z.string().optional().describe('Document Number'),
+                      TransactionNumber: z.string().optional().describe('Transaction Number'),
+                      Memo: z.string().optional().describe('Memo of the Bill'),
+                      Amount: z.number().optional().describe('Amount of the Bill'),
+                      Account: z
+                        .string()
+                        .optional()
+                        .describe(
+                          'In output, Account is the Name of the Account associated with this bill. For Filter, this is the AccountNumber'
+                        ),
+                      Vendor: z.string().optional().describe('Name of the Vendor of this Bill'),
+                      Department: z.string().optional().describe('Department associated with Bill'),
+                      Subsidiary: z.string().optional().describe('Subsidiary associated with Bill'),
+                      AmortScheduleName: z
+                        .string()
+                        .optional()
+                        .describe('Amortization Schedule Name'),
+                      AmortStartDate: z
+                        .string()
+                        .optional()
+                        .describe('Amortization Schedule Start Date'),
+                      AmortEndDate: z
+                        .string()
+                        .optional()
+                        .describe('Amortization Schedule End Date'),
+                      Status: z
+                        .enum([
+                          'Cancelled',
+                          'Open',
+                          'Paid In Full',
+                          'Payment In-Transit',
+                          'Pending Approval',
+                          'Rejected',
+                        ])
+                        .optional()
+                        .describe('Status of the Bill'),
+                    })
+                  )
                   .describe(
-                    'In output, Account is the Name of the Account associated with this bill. For Filter, this is the AccountNumber'
-                  ),
-                Vendor: z.string().optional().describe('Name of the Vendor of this Bill'),
-                Department: z.string().optional().describe('Department associated with Bill'),
-                Subsidiary: z.string().optional().describe('Subsidiary associated with Bill'),
-                AmortScheduleName: z.string().optional().describe('Amortization Schedule Name'),
-                AmortStartDate: z.string().optional().describe('Amortization Schedule Start Date'),
-                AmortEndDate: z.string().optional().describe('Amortization Schedule End Date'),
-                Status: z
-                  .enum([
-                    'Cancelled',
-                    'Open',
-                    'Paid In Full',
-                    'Payment In-Transit',
-                    'Pending Approval',
-                    'Rejected',
-                  ])
-                  .optional()
-                  .describe('Status of the Bill'),
+                    'Array of bill records. Present when CountOnly=false. Each bill represents vendor bill data.'
+                  )
+                  .optional(),
+                Count: z
+                  .number()
+                  .int()
+                  .positive()
+                  .describe('Total number of bill records. Present when CountOnly=true.')
+                  .optional(),
               })
             )
-            .describe(
-              'Array of bill records. Present when CountOnly=false. Each bill represents vendor bill data.'
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe('Total number of bill records. Present when CountOnly=true.')
-            .optional(),
-        },
+          )}`,
+        inputSchema: NetSuiteHelper.paramSchema,
       },
       async (input: GetBillsInput) => {
         const startTime = Date.now();

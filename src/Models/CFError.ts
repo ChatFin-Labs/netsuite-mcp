@@ -1,4 +1,4 @@
-type ErrorName = "Config" | "Bank" | "UserErr" | "AIErr" | "APIErr";
+type ErrorName = 'Config' | 'Bank' | 'UserErr' | 'AIErr' | 'APIErr';
 
 export class CFError extends Error {
   name: ErrorName;
@@ -9,7 +9,7 @@ export class CFError extends Error {
     super();
     this.name = name;
     // TODO: make this better
-    this.message = name + ":" + message;
+    this.message = name + ':' + message;
     this.cause = cause;
   }
 }

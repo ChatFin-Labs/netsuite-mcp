@@ -2,6 +2,7 @@ import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface GetLocationInput {
   CountOnly?: boolean;
@@ -31,29 +32,32 @@ export class GetLocations {
       this.toolName,
       {
         title: 'Get Locations',
-        description: 'Get List of all Locations',
-        inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          locations: z
-            .array(
+        description:
+          'Get List of all Locations' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
               z.object({
-                Id: z.string().optional().describe('Id of the Location'),
-                Name: z.string().optional().describe('Name of the Location'),
+                locations: z
+                  .array(
+                    z.object({
+                      Id: z.string().optional().describe('Id of the Location'),
+                      Name: z.string().optional().describe('Name of the Location'),
+                    })
+                  )
+                  .describe(
+                    'Array of location records. Present when CountOnly=false. Each location represents location data.'
+                  )
+                  .optional(),
+                Count: z
+                  .number()
+                  .int()
+                  .positive()
+                  .describe('Total number of location records. Present when CountOnly=true.')
+                  .optional(),
               })
             )
-            .describe(
-              'Array of location records. Present when CountOnly=false. Each location represents location data.'
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe(
-              'Total number of location records. Present when CountOnly=true.'
-            )
-            .optional(),
-        },
+          )}`,
+        inputSchema: NetSuiteHelper.paramSchema,
       },
       async (input: GetLocationInput) => {
         const startTime = Date.now();
@@ -68,7 +72,7 @@ export class GetLocations {
           // Handle count-only response
           if (input.CountOnly === true) {
             const countResult = result as { Count: number };
-            
+
             logger.info({
               Module: 'getLocation',
               Message: 'Successfully retrieved location count',

@@ -63,7 +63,8 @@
     "passport-oauth2": "^1.8.0",
     "uuid": "^13.0.0",
     "winston": "^3.10.0",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

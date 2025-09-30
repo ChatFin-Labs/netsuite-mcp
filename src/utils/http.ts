@@ -13,8 +13,6 @@ export type NetSuiteHTTPRequest = Omit<HTTPRequest, 'headers'> & {
   headers?: Record<string, string>;
 };
 
-
-
 /**
  * Generic HTTP request utility using axios.
  * @param req HTTPRequest object
@@ -46,7 +44,6 @@ export async function request<T = unknown>(req: HTTPRequest): Promise<T> {
   const baseUrl = '';
 
   try {
-
     const config: AxiosRequestConfig = {
       url: baseUrl ? `${baseUrl}${req.url}` : req.url,
       method: req.method,
@@ -160,13 +157,13 @@ export async function netsuiteRequest<T = unknown>(
   if (!baseUrl || !authToken) {
     logger.error({
       Module: 'netsuite-request',
-      Message: 'Missing required environment variables for NetSuite request - NETSUITE_REST_URL or NETSUITE_ACCESS_TOKEN',
+      Message:
+        'Missing required environment variables for NetSuite request - NETSUITE_REST_URL or NETSUITE_ACCESS_TOKEN',
     });
-    throw new Error('Missing required environment variables for NetSuite request - NETSUITE_REST_URL or NETSUITE_ACCESS_TOKEN');
+    throw new Error(
+      'Missing required environment variables for NetSuite request - NETSUITE_REST_URL or NETSUITE_ACCESS_TOKEN'
+    );
   }
-
-
-
 
   const url = endpoint.startsWith('/')
     ? `${baseUrl.replace(/\/$/, '')}${endpoint}`

@@ -2,6 +2,7 @@ import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface GetJournalsInput {
   CountOnly?: boolean;
@@ -58,48 +59,59 @@ export class GetJournals {
       this.toolName,
       {
         title: 'Get Journals',
-        description: 'Get List of Journal Entries',
-        inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          journals: z
-            .array(
+        description:
+          'Get List of Journal Entries' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
               z.object({
-                Id: z.string().optional().describe('Id of the Journal'),
-                Date: z.string().optional().describe('Date of the Journal'),
-                Period: z
-                  .string()
-                  .optional()
+                journals: z
+                  .array(
+                    z.object({
+                      Id: z.string().optional().describe('Id of the Journal'),
+                      Date: z.string().optional().describe('Date of the Journal'),
+                      Period: z
+                        .string()
+                        .optional()
+                        .describe(
+                          'Period of the Journal. Do not use Period for filter, use Date column.'
+                        ),
+                      Name: z.string().optional().describe('Name associated with the Journal'),
+                      DocumentNumber: z
+                        .string()
+                        .optional()
+                        .describe('Document Number of the Journal'),
+                      Memo: z.string().optional().describe('Memo of the Journal'),
+                      Account: z
+                        .string()
+                        .optional()
+                        .describe(
+                          'In output, Account is the Name of the Account associated with this Journal. For Filter, this is the AccountNumber'
+                        ),
+                      Subsidiary: z
+                        .string()
+                        .optional()
+                        .describe('Subsidiary associated with Journal'),
+                      Amount: z.number().optional().describe('Amount of the Journal'),
+                      Status: z
+                        .enum(['Approved for Posting', 'Pending Approval', 'Rejected'])
+                        .optional()
+                        .describe('Status of the Journal'),
+                    })
+                  )
                   .describe(
-                    'Period of the Journal. Do not use Period for filter, use Date column.'
-                  ),
-                Name: z.string().optional().describe('Name associated with the Journal'),
-                DocumentNumber: z.string().optional().describe('Document Number of the Journal'),
-                Memo: z.string().optional().describe('Memo of the Journal'),
-                Account: z
-                  .string()
-                  .optional()
-                  .describe(
-                    'In output, Account is the Name of the Account associated with this Journal. For Filter, this is the AccountNumber'
-                  ),
-                Subsidiary: z.string().optional().describe('Subsidiary associated with Journal'),
-                Amount: z.number().optional().describe('Amount of the Journal'),
-                Status: z
-                  .enum(['Approved for Posting', 'Pending Approval', 'Rejected'])
-                  .optional()
-                  .describe('Status of the Journal'),
+                    'Array of journal records. Present when CountOnly=false. Each journal represents journal entry data.'
+                  )
+                  .optional(),
+                Count: z
+                  .number()
+                  .int()
+                  .positive()
+                  .describe('Total number of journal records. Present when CountOnly=true.')
+                  .optional(),
               })
             )
-            .describe(
-              'Array of journal records. Present when CountOnly=false. Each journal represents journal entry data.'
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe('Total number of journal records. Present when CountOnly=true.')
-            .optional(),
-        },
+          )}`,
+        inputSchema: NetSuiteHelper.paramSchema,
       },
       async (input: GetJournalsInput) => {
         const startTime = Date.now();

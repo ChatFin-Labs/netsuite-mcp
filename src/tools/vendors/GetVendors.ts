@@ -2,6 +2,7 @@ import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface GetVendorsInput {
   CountOnly?: boolean;
@@ -36,34 +37,40 @@ export class GetVendors {
       this.toolName,
       {
         title: 'Get Vendors',
-        description: 'Get List of all Vendors with contact information',
-        inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          vendors: z
-            .array(
+        description:
+          'Get List of all Vendors with contact information' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
               z.object({
-                Id: z.string().optional().describe('Id of the Vendor'),
-                Name: z.string().optional().describe('Name of the Vendor'),
-                Email: z.string().optional().describe('Email of the Vendor'),
-                Phone: z.string().optional().describe('Phone number of the Vendor'),
-                OfficePhone: z.string().optional().describe('Office Phone number of the Vendor'),
-                Fax: z.string().optional().describe('Fax of the Vendor'),
-                AltEmail: z.string().optional().describe('Alternate Email of the Vendor'),
+                vendors: z
+                  .array(
+                    z.object({
+                      Id: z.string().optional().describe('Id of the Vendor'),
+                      Name: z.string().optional().describe('Name of the Vendor'),
+                      Email: z.string().optional().describe('Email of the Vendor'),
+                      Phone: z.string().optional().describe('Phone number of the Vendor'),
+                      OfficePhone: z
+                        .string()
+                        .optional()
+                        .describe('Office Phone number of the Vendor'),
+                      Fax: z.string().optional().describe('Fax of the Vendor'),
+                      AltEmail: z.string().optional().describe('Alternate Email of the Vendor'),
+                    })
+                  )
+                  .describe(
+                    'Array of vendor records. Present when CountOnly=false. Each vendor represents vendor data with contact information.'
+                  )
+                  .optional(),
+                Count: z
+                  .number()
+                  .int()
+                  .positive()
+                  .describe('Total number of vendor records. Present when CountOnly=true.')
+                  .optional(),
               })
             )
-            .describe(
-              'Array of vendor records. Present when CountOnly=false. Each vendor represents vendor data with contact information.'
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe(
-              'Total number of vendor records. Present when CountOnly=true.'
-            )
-            .optional(),
-        },
+          )}`,
+        inputSchema: NetSuiteHelper.paramSchema,
       },
       async (input: GetVendorsInput) => {
         const startTime = Date.now();
@@ -78,7 +85,7 @@ export class GetVendors {
           // Handle count-only response
           if (input.CountOnly === true) {
             const countResult = result as { Count: number };
-            
+
             logger.info({
               Module: 'getVendors',
               Message: 'Successfully retrieved vendor count',

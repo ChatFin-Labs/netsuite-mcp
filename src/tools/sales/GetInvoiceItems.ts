@@ -2,6 +2,7 @@ import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface GetInvoiceItemsInput {
   CountOnly?: boolean;
@@ -33,31 +34,34 @@ export class GetInvoiceItems {
       this.toolName,
       {
         title: 'Get Invoice Items',
-        description: 'Get List of Items of the invoice',
-        inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          invoiceItems: z
-            .array(
+        description:
+          'Get List of Items of the invoice' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
               z.object({
-                Id: z.string().optional().describe('Id of the Invoice'),
-                TranId: z.string().optional().describe('Entity id of the invoice'),
-                Amount: z.number().optional().describe('Amount of each item in invoice'),
-                Item: z.string().optional().describe('Internal Id of each item in invoice'),
+                invoiceItems: z
+                  .array(
+                    z.object({
+                      Id: z.string().optional().describe('Id of the Invoice'),
+                      TranId: z.string().optional().describe('Entity id of the invoice'),
+                      Amount: z.number().optional().describe('Amount of each item in invoice'),
+                      Item: z.string().optional().describe('Internal Id of each item in invoice'),
+                    })
+                  )
+                  .describe(
+                    'Array of invoice item records. Present when CountOnly=false. Each invoice item represents line item data from invoices.'
+                  )
+                  .optional(),
+                Count: z
+                  .number()
+                  .int()
+                  .positive()
+                  .describe('Total number of invoice item records. Present when CountOnly=true.')
+                  .optional(),
               })
             )
-            .describe(
-              'Array of invoice item records. Present when CountOnly=false. Each invoice item represents line item data from invoices.'
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe(
-              'Total number of invoice item records. Present when CountOnly=true.'
-            )
-            .optional(),
-        },
+          )}`,
+        inputSchema: NetSuiteHelper.paramSchema,
       },
       async (input: GetInvoiceItemsInput) => {
         const startTime = Date.now();
@@ -70,15 +74,21 @@ export class GetInvoiceItems {
             ['item.type', 'anyof', 'InvtPart', 'NonInvtPart'],
           ];
 
-          const result = await NetSuiteHelper.searchRestlet('invoice', this.Columns, input, filters, {
-            Column: 'Date',
-            SortOrder: 'DESC',
-          });
+          const result = await NetSuiteHelper.searchRestlet(
+            'invoice',
+            this.Columns,
+            input,
+            filters,
+            {
+              Column: 'Date',
+              SortOrder: 'DESC',
+            }
+          );
 
           // Handle count-only response
           if (input.CountOnly === true) {
             const countResult = result as { Count: number };
-            
+
             logger.info({
               Module: 'getInvoiceItems',
               Message: 'Successfully retrieved invoice items count',
@@ -107,7 +117,10 @@ export class GetInvoiceItems {
           const finalData = invoiceItems.map((invoiceItem) => ({
             ...invoiceItem,
             Id: invoiceItem.Id !== undefined ? String(invoiceItem.Id) : undefined,
-            Amount: typeof invoiceItem.Amount === 'string' ? parseFloat(invoiceItem.Amount) : invoiceItem.Amount,
+            Amount:
+              typeof invoiceItem.Amount === 'string'
+                ? parseFloat(invoiceItem.Amount)
+                : invoiceItem.Amount,
           }));
 
           const totalDuration = Date.now() - startTime;

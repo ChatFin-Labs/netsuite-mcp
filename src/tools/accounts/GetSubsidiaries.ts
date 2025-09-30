@@ -2,6 +2,7 @@ import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface GetSubsidiariesInput {
   CountOnly?: boolean;
@@ -32,22 +33,27 @@ export class GetSubsidiaries {
       this.toolName,
       {
         title: 'Get Subsidiaries',
-        description: 'Get List of all Subsidiaries',
-        inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          subsidiaries: z
-            .array(
+        description:
+          'Get List of all Subsidiaries' +
+          `Output Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(
               z.object({
-                Id: z.string().optional().describe('Id of the Subsidiary'),
-                Name: z.string().optional().describe('Name of the Subsidiary'),
-                ParentId: z.string().optional().describe('Parent Id of the Subsidiary'),
+                subsidiaries: z
+                  .array(
+                    z.object({
+                      Id: z.string().optional().describe('Id of the Subsidiary'),
+                      Name: z.string().optional().describe('Name of the Subsidiary'),
+                      ParentId: z.string().optional().describe('Parent Id of the Subsidiary'),
+                    })
+                  )
+                  .describe(
+                    'Array of subsidiary records. Present when CountOnly=false. Each subsidiary represents subsidiary data.'
+                  )
+                  .optional(),
               })
             )
-            .describe(
-              'Array of subsidiary records. Present when CountOnly=false. Each subsidiary represents subsidiary data.'
-            )
-            .optional(),
-        },
+          )}`,
+        inputSchema: NetSuiteHelper.paramSchema,
       },
       async (input: GetSubsidiariesInput) => {
         const startTime = Date.now();
