@@ -27,6 +27,28 @@ export class GetClasses {
     Name: { name: 'name', type: 'string' },
   };
 
+  private readonly outputSchema = {
+    classes: z
+      .array(
+        z.object({
+          Id: z.string().optional().describe('Id of the Class'),
+          Name: z.string().optional().describe('Name of the Class'),
+        })
+      )
+      .describe(
+        'Array of class records. Present when CountOnly=false. Each class represents classification data.'
+      )
+      .optional(),
+    Count: z
+      .number()
+      .int()
+      .positive()
+      .describe('Total number of class records. Present when CountOnly=true.')
+      .optional(),
+  };
+
+  private readonly samples: Array<string> = [];
+
   public register(server: McpServer) {
     server.registerTool(
       this.toolName,
@@ -34,30 +56,12 @@ export class GetClasses {
         title: 'Get Classes',
         description:
           'Get List of all Classes (Classifications)' +
-          `Output Schema of this tool: ${JSON.stringify(
-            zodToJsonSchema(
-              z.object({
-                classes: z
-                  .array(
-                    z.object({
-                      Id: z.string().optional().describe('Id of the Class'),
-                      Name: z.string().optional().describe('Name of the Class'),
-                    })
-                  )
-                  .describe(
-                    'Array of class records. Present when CountOnly=false. Each class represents classification data.'
-                  )
-                  .optional(),
-                Count: z
-                  .number()
-                  .int()
-                  .positive()
-                  .describe('Total number of class records. Present when CountOnly=true.')
-                  .optional(),
-              })
-            )
+          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
           )}`,
         inputSchema: NetSuiteHelper.paramSchema,
+        outputSchema: this.outputSchema,
       },
       async (input: GetClassInput) => {
         const startTime = Date.now();

@@ -33,6 +33,34 @@ export class GetCustomers {
     AltEmail: { name: 'altemail', type: 'string' },
   };
 
+  private readonly outputSchema = {
+    customers: z
+      .array(
+        z.object({
+          Id: z.string().optional().describe('Id of the Customer'),
+          Name: z.string().optional().describe('Name of the Customer'),
+          Email: z.string().optional().describe('Email of the Customer'),
+          Phone: z.string().optional().describe('Phone number of the Customer'),
+          OfficePhone: z.string().optional().describe('Alternate Phone number of the Customer'),
+          Fax: z.string().optional().describe('Fax of the Customer'),
+          PrimaryContact: z.string().optional().describe('Primary Contact of the Customer'),
+          AltEmail: z.string().optional().describe('Alternate Email of the Customer'),
+        })
+      )
+      .describe(
+        'Array of customer records. Present when CountOnly=false. Each customer represents customer data with contact information.'
+      )
+      .optional(),
+    Count: z
+      .number()
+      .int()
+      .positive()
+      .describe('Total number of customer records. Present when CountOnly=true.')
+      .optional(),
+  };
+
+  private readonly samples: Array<string> = [];
+
   public register(server: McpServer) {
     server.registerTool(
       this.toolName,
@@ -40,42 +68,12 @@ export class GetCustomers {
         title: 'Get Customers',
         description:
           'Get List of all Customers with contact information' +
-          `Output Schema of this tool: ${JSON.stringify(
-            zodToJsonSchema(
-              z.object({
-                customers: z
-                  .array(
-                    z.object({
-                      Id: z.string().optional().describe('Id of the Customer'),
-                      Name: z.string().optional().describe('Name of the Customer'),
-                      Email: z.string().optional().describe('Email of the Customer'),
-                      Phone: z.string().optional().describe('Phone number of the Customer'),
-                      OfficePhone: z
-                        .string()
-                        .optional()
-                        .describe('Alternate Phone number of the Customer'),
-                      Fax: z.string().optional().describe('Fax of the Customer'),
-                      PrimaryContact: z
-                        .string()
-                        .optional()
-                        .describe('Primary Contact of the Customer'),
-                      AltEmail: z.string().optional().describe('Alternate Email of the Customer'),
-                    })
-                  )
-                  .describe(
-                    'Array of customer records. Present when CountOnly=false. Each customer represents customer data with contact information.'
-                  )
-                  .optional(),
-                Count: z
-                  .number()
-                  .int()
-                  .positive()
-                  .describe('Total number of customer records. Present when CountOnly=true.')
-                  .optional(),
-              })
-            )
+          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
           )}`,
         inputSchema: NetSuiteHelper.paramSchema,
+        outputSchema: this.outputSchema,
       },
       async (input: GetCustomersInput) => {
         const startTime = Date.now();

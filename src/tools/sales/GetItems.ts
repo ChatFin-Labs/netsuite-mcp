@@ -30,6 +30,31 @@ export class GetItems {
     Type: { name: 'type', type: 'string' },
     BasePrice: { name: 'baseprice', type: 'string' },
   };
+  private readonly outputSchema = {
+    items: z
+      .array(
+        z.object({
+          InternalId: z.string().optional().describe('Id of the Item'),
+          Name: z.string().optional().describe('Name of the Item'),
+          DisplayName: z.string().optional().describe('Display name of the Item'),
+          Description: z.string().optional().describe('Description about the item'),
+          Type: z.string().optional().describe('Type of the item'),
+          BasePrice: z.string().optional().describe('Base price of the item'),
+        })
+      )
+      .describe(
+        'Array of item records. Present when CountOnly=false. Each item represents sellable item data.'
+      )
+      .optional(),
+    Count: z
+      .number()
+      .int()
+      .positive()
+      .describe('Total number of item records. Present when CountOnly=true.')
+      .optional(),
+  };
+
+  private readonly samples: Array<string> = [];
 
   public register(server: McpServer) {
     server.registerTool(
@@ -38,34 +63,12 @@ export class GetItems {
         title: 'Get Items',
         description:
           'Get List of all sellable Items with details' +
-          `Output Schema of this tool: ${JSON.stringify(
-            zodToJsonSchema(
-              z.object({
-                items: z
-                  .array(
-                    z.object({
-                      InternalId: z.string().optional().describe('Id of the Item'),
-                      Name: z.string().optional().describe('Name of the Item'),
-                      DisplayName: z.string().optional().describe('Display name of the Item'),
-                      Description: z.string().optional().describe('Description about the item'),
-                      Type: z.string().optional().describe('Type of the item'),
-                      BasePrice: z.string().optional().describe('Base price of the item'),
-                    })
-                  )
-                  .describe(
-                    'Array of item records. Present when CountOnly=false. Each item represents sellable item data.'
-                  )
-                  .optional(),
-                Count: z
-                  .number()
-                  .int()
-                  .positive()
-                  .describe('Total number of item records. Present when CountOnly=true.')
-                  .optional(),
-              })
-            )
+          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
           )}`,
         inputSchema: NetSuiteHelper.paramSchema,
+        outputSchema: this.outputSchema,
       },
       async (input: GetItemsInput) => {
         const startTime = Date.now();

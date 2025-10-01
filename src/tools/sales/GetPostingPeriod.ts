@@ -27,6 +27,28 @@ export class GetPostingPeriod {
     Name: { name: 'periodname', type: 'string' },
   };
 
+  private readonly outputSchema = {
+    postingPeriods: z
+      .array(
+        z.object({
+          Id: z.string().optional().describe('Id of the posting period'),
+          Name: z.string().optional().describe('Period name'),
+        })
+      )
+      .describe(
+        'Array of posting period records. Present when CountOnly=false. Each posting period represents accounting period data.'
+      )
+      .optional(),
+    Count: z
+      .number()
+      .int()
+      .positive()
+      .describe('Total number of posting period records. Present when CountOnly=true.')
+      .optional(),
+  };
+
+  private readonly samples: Array<string> = [];
+
   public register(server: McpServer) {
     server.registerTool(
       this.toolName,
@@ -34,30 +56,12 @@ export class GetPostingPeriod {
         title: 'Get Posting Period',
         description:
           'Get List of all posting periods' +
-          `Output Schema of this tool: ${JSON.stringify(
-            zodToJsonSchema(
-              z.object({
-                postingPeriods: z
-                  .array(
-                    z.object({
-                      Id: z.string().optional().describe('Id of the posting period'),
-                      Name: z.string().optional().describe('Period name'),
-                    })
-                  )
-                  .describe(
-                    'Array of posting period records. Present when CountOnly=false. Each posting period represents accounting period data.'
-                  )
-                  .optional(),
-                Count: z
-                  .number()
-                  .int()
-                  .positive()
-                  .describe('Total number of posting period records. Present when CountOnly=true.')
-                  .optional(),
-              })
-            )
+          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
           )}`,
         inputSchema: NetSuiteHelper.paramSchema,
+        outputSchema: this.outputSchema,
       },
       async (input: GetPostingPeriodInput) => {
         const startTime = Date.now();

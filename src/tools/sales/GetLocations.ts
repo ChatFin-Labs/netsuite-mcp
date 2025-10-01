@@ -27,6 +27,28 @@ export class GetLocations {
     Name: { name: 'name', type: 'string' },
   };
 
+  private readonly outputSchema = {
+    locations: z
+      .array(
+        z.object({
+          Id: z.string().optional().describe('Id of the Location'),
+          Name: z.string().optional().describe('Name of the Location'),
+        })
+      )
+      .describe(
+        'Array of location records. Present when CountOnly=false. Each location represents location data.'
+      )
+      .optional(),
+    Count: z
+      .number()
+      .int()
+      .positive()
+      .describe('Total number of location records. Present when CountOnly=true.')
+      .optional(),
+  };
+
+  private readonly samples: Array<string> = [];
+
   public register(server: McpServer) {
     server.registerTool(
       this.toolName,
@@ -34,30 +56,12 @@ export class GetLocations {
         title: 'Get Locations',
         description:
           'Get List of all Locations' +
-          `Output Schema of this tool: ${JSON.stringify(
-            zodToJsonSchema(
-              z.object({
-                locations: z
-                  .array(
-                    z.object({
-                      Id: z.string().optional().describe('Id of the Location'),
-                      Name: z.string().optional().describe('Name of the Location'),
-                    })
-                  )
-                  .describe(
-                    'Array of location records. Present when CountOnly=false. Each location represents location data.'
-                  )
-                  .optional(),
-                Count: z
-                  .number()
-                  .int()
-                  .positive()
-                  .describe('Total number of location records. Present when CountOnly=true.')
-                  .optional(),
-              })
-            )
+          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
           )}`,
         inputSchema: NetSuiteHelper.paramSchema,
+        outputSchema: this.outputSchema,
       },
       async (input: GetLocationInput) => {
         const startTime = Date.now();

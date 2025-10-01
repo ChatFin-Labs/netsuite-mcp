@@ -24,10 +24,42 @@ export class GetCreditMemos {
 
   private readonly Columns: SuiteScriptColumns = {
     Id: { name: 'internalid', type: 'id' },
-    CustomerName: { name: 'custbody_ava_customercompanyname', type: 'string' },
+    CustomerName: { name: 'companyname', join: 'customerMain', type: 'string' },
     Amount: { name: 'amount', type: 'string' },
     Date: { name: 'trandate', type: 'date' },
   };
+
+  private readonly outputSchema = {
+    creditMemos: z
+      .array(
+        z.object({
+          Id: z.string().optional().describe('Id of the credit memo'),
+          CustomerName: z
+            .string()
+            .optional()
+            .describe('Customer name for which the credit memo is created'),
+          Amount: z.string().optional().describe('Amount of the Credit Memo'),
+          Date: z.string().optional().describe('Date of the credit memo'),
+        })
+      )
+      .describe(
+        'Array of credit memo records. Present when CountOnly=false. Each credit memo represents credit memo data.'
+      )
+      .optional(),
+    Count: z
+      .number()
+      .int()
+      .positive()
+      .describe('Total number of credit memo records. Present when CountOnly=true.')
+      .optional(),
+  };
+
+  private readonly samples: Array<string> = [
+    'Get me all credit memos of oct 2023',
+    'Get me all credit memos of customer {Customer Name}.',
+    'Show me all credit memos of customer {Customer Name} in oct 2023',
+    'Show me all credit memos of customer {Customer Name} in {Period} order by Amount.',
+  ];
 
   public register(server: McpServer) {
     server.registerTool(
@@ -36,35 +68,12 @@ export class GetCreditMemos {
         title: 'Get Credit Memos',
         description:
           'Get List of Credit Memos' +
-          `Output Schema of this tool: ${JSON.stringify(
-            zodToJsonSchema(
-              z.object({
-                creditMemos: z
-                  .array(
-                    z.object({
-                      Id: z.string().optional().describe('Id of the credit memo'),
-                      CustomerName: z
-                        .string()
-                        .optional()
-                        .describe('Customer name for which the credit memo is created'),
-                      Amount: z.string().optional().describe('Amount of the Credit Memo'),
-                      Date: z.string().optional().describe('Date of the credit memo'),
-                    })
-                  )
-                  .describe(
-                    'Array of credit memo records. Present when CountOnly=false. Each credit memo represents credit memo data.'
-                  )
-                  .optional(),
-                Count: z
-                  .number()
-                  .int()
-                  .positive()
-                  .describe('Total number of credit memo records. Present when CountOnly=true.')
-                  .optional(),
-              })
-            )
+          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
           )}`,
         inputSchema: NetSuiteHelper.paramSchema,
+        outputSchema: this.outputSchema,
       },
       async (input: GetCreditMemoInput) => {
         const startTime = Date.now();

@@ -28,6 +28,32 @@ export class GetInvoiceItems {
     Amount: { name: 'amount', type: 'number' },
     Item: { name: 'item', type: 'string' },
   };
+  private readonly outputSchema = {
+    invoiceItems: z
+      .array(
+        z.object({
+          Id: z.string().optional().describe('Id of the Invoice'),
+          TranId: z.string().optional().describe('Entity id of the invoice'),
+          Amount: z.number().optional().describe('Amount of each item in invoice'),
+          Item: z.string().optional().describe('Internal Id of each item in invoice'),
+        })
+      )
+      .describe(
+        'Array of invoice item records. Present when CountOnly=false. Each invoice item represents line item data from invoices.'
+      )
+      .optional(),
+    Count: z
+      .number()
+      .int()
+      .positive()
+      .describe('Total number of invoice item records. Present when CountOnly=true.')
+      .optional(),
+  };
+
+  private readonly samples: Array<string> = [
+    'Get invoice line items for invoice $InvoiceId',
+    'Get line items for a specific invoice',
+  ];
 
   public register(server: McpServer) {
     server.registerTool(
@@ -36,32 +62,12 @@ export class GetInvoiceItems {
         title: 'Get Invoice Items',
         description:
           'Get List of Items of the invoice' +
-          `Output Schema of this tool: ${JSON.stringify(
-            zodToJsonSchema(
-              z.object({
-                invoiceItems: z
-                  .array(
-                    z.object({
-                      Id: z.string().optional().describe('Id of the Invoice'),
-                      TranId: z.string().optional().describe('Entity id of the invoice'),
-                      Amount: z.number().optional().describe('Amount of each item in invoice'),
-                      Item: z.string().optional().describe('Internal Id of each item in invoice'),
-                    })
-                  )
-                  .describe(
-                    'Array of invoice item records. Present when CountOnly=false. Each invoice item represents line item data from invoices.'
-                  )
-                  .optional(),
-                Count: z
-                  .number()
-                  .int()
-                  .positive()
-                  .describe('Total number of invoice item records. Present when CountOnly=true.')
-                  .optional(),
-              })
-            )
+          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
           )}`,
         inputSchema: NetSuiteHelper.paramSchema,
+        outputSchema: this.outputSchema,
       },
       async (input: GetInvoiceItemsInput) => {
         const startTime = Date.now();

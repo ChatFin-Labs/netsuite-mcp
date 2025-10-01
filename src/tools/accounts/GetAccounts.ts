@@ -26,6 +26,50 @@ export class GetAccounts {
     ? process.env.NETSUITE_ACCOUNT_TYPES.split(',').map((type) => type.trim())
     : [];
 
+  private readonly outputSchema = {
+    accounts: z
+      .array(
+        z.object({
+          Id: z.string().optional().describe('Id of the Account'),
+          Name: z.string().optional().describe('Name of the Account'),
+          AccountNumber: z.string().optional().describe('Number of the Account'),
+          ParentNumber: z
+            .string()
+            .optional()
+            .describe(
+              'Parent Number of the Account. Hierarchy can be created by referencing this with AccountNumber property'
+            ),
+          Type:
+            this.accountTypes.length > 0
+              ? z
+                  .enum(this.accountTypes as [string, ...string[]])
+                  .optional()
+                  .describe('Type of the Account')
+              : z.string().optional().describe('Type of the Account'),
+        })
+      )
+      .describe(
+        'Array of account records. Present when CountOnly=false. Each account represents account data.'
+      )
+      .optional(),
+    Count: z
+      .number()
+      .int()
+      .positive()
+      .describe('Total number of account records. Present when CountOnly=true.')
+      .optional(),
+  };
+
+  private readonly samples: Array<string> = [
+    'Get all Accounts',
+    'Show me all accounts',
+    'Show me all the expense accounts',
+    'Show me all the accounts with Payroll in name',
+    'Show me all Asset accounts',
+    'Get the total number of Accounts',
+    'get me all the Customer Accounts',
+  ];
+
   public register(server: McpServer) {
     server.registerTool(
       this.toolName,
@@ -33,44 +77,12 @@ export class GetAccounts {
         title: 'Get Accounts',
         description:
           'Get List of Accounts, this can be used to get all Accounts or specific Accounts information' +
-          `Output Schema of this tool: ${JSON.stringify(
-            zodToJsonSchema(
-              z.object({
-                accounts: z
-                  .array(
-                    z.object({
-                      Id: z.string().optional().describe('Id of the Account'),
-                      Name: z.string().optional().describe('Name of the Account'),
-                      AccountNumber: z.string().optional().describe('Number of the Account'),
-                      ParentNumber: z
-                        .string()
-                        .optional()
-                        .describe(
-                          'Parent Number of the Account. Hierarchy can be created by referencing this with AccountNumber property'
-                        ),
-                      Type:
-                        this.accountTypes.length > 0
-                          ? z
-                              .enum(this.accountTypes as [string, ...string[]])
-                              .optional()
-                              .describe('Type of the Account')
-                          : z.string().optional().describe('Type of the Account'),
-                    })
-                  )
-                  .describe(
-                    'Array of account records. Present when CountOnly=false. Each account represents account data.'
-                  )
-                  .optional(),
-                Count: z
-                  .number()
-                  .int()
-                  .positive()
-                  .describe('Total number of account records. Present when CountOnly=true.')
-                  .optional(),
-              })
-            )
+          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
           )}`,
         inputSchema: NetSuiteHelper.paramSchema,
+        outputSchema: this.outputSchema,
       },
       async (input: GetAccountsInput) => {
         const startTime = Date.now();

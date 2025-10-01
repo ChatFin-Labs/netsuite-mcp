@@ -54,6 +54,53 @@ export class GetJournals {
     },
   };
 
+  private readonly outputSchema = {
+    journals: z
+      .array(
+        z.object({
+          Id: z.string().optional().describe('Id of the Journal'),
+          Date: z.string().optional().describe('Date of the Journal'),
+          Period: z
+            .string()
+            .optional()
+            .describe('Period of the Journal. Do not use Period for filter, use Date column.'),
+          Name: z.string().optional().describe('Name associated with the Journal'),
+          DocumentNumber: z.string().optional().describe('Document Number of the Journal'),
+          Memo: z.string().optional().describe('Memo of the Journal'),
+          Account: z
+            .string()
+            .optional()
+            .describe(
+              'In output, Account is the Name of the Account associated with this Journal. For Filter, this is the AccountNumber'
+            ),
+          Subsidiary: z.string().optional().describe('Subsidiary associated with Journal'),
+          Amount: z.number().optional().describe('Amount of the Journal'),
+          Status: z
+            .enum(['Approved for Posting', 'Pending Approval', 'Rejected'])
+            .optional()
+            .describe('Status of the Journal'),
+        })
+      )
+      .describe(
+        'Array of journal records. Present when CountOnly=false. Each journal represents journal entry data.'
+      )
+      .optional(),
+    Count: z
+      .number()
+      .int()
+      .positive()
+      .describe('Total number of journal records. Present when CountOnly=true.')
+      .optional(),
+  };
+
+  private readonly samples: Array<string> = [
+    'Get me all the journals for Oct 2023',
+    'Get me unapproved journals for Oct 2023',
+    'Get me the journal for the account ${AccountName}',
+    'Show me the journal for the account ${AccountName} for ${Period}',
+    'Show me the journal for the account ${AccountName} for ${Period} that are Pending Approval',
+  ];
+
   public register(server: McpServer) {
     server.registerTool(
       this.toolName,
@@ -61,57 +108,12 @@ export class GetJournals {
         title: 'Get Journals',
         description:
           'Get List of Journal Entries' +
-          `Output Schema of this tool: ${JSON.stringify(
-            zodToJsonSchema(
-              z.object({
-                journals: z
-                  .array(
-                    z.object({
-                      Id: z.string().optional().describe('Id of the Journal'),
-                      Date: z.string().optional().describe('Date of the Journal'),
-                      Period: z
-                        .string()
-                        .optional()
-                        .describe(
-                          'Period of the Journal. Do not use Period for filter, use Date column.'
-                        ),
-                      Name: z.string().optional().describe('Name associated with the Journal'),
-                      DocumentNumber: z
-                        .string()
-                        .optional()
-                        .describe('Document Number of the Journal'),
-                      Memo: z.string().optional().describe('Memo of the Journal'),
-                      Account: z
-                        .string()
-                        .optional()
-                        .describe(
-                          'In output, Account is the Name of the Account associated with this Journal. For Filter, this is the AccountNumber'
-                        ),
-                      Subsidiary: z
-                        .string()
-                        .optional()
-                        .describe('Subsidiary associated with Journal'),
-                      Amount: z.number().optional().describe('Amount of the Journal'),
-                      Status: z
-                        .enum(['Approved for Posting', 'Pending Approval', 'Rejected'])
-                        .optional()
-                        .describe('Status of the Journal'),
-                    })
-                  )
-                  .describe(
-                    'Array of journal records. Present when CountOnly=false. Each journal represents journal entry data.'
-                  )
-                  .optional(),
-                Count: z
-                  .number()
-                  .int()
-                  .positive()
-                  .describe('Total number of journal records. Present when CountOnly=true.')
-                  .optional(),
-              })
-            )
+          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
           )}`,
         inputSchema: NetSuiteHelper.paramSchema,
+        outputSchema: this.outputSchema,
       },
       async (input: GetJournalsInput) => {
         const startTime = Date.now();

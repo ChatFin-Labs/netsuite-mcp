@@ -22,6 +22,28 @@ interface GetAccountingPeriodsInput {
 
 export class GetAccountingPeriods {
   private readonly toolName = 'get-accounting-periods';
+  private readonly outputSchema = {
+    accountingPeriods: z
+      .array(
+        z.object({
+          Id: z.string().optional().describe('Id of the Accounting Period'),
+          StartDate: z.string().optional().describe('Start date of the period'),
+          EndDate: z.string().optional().describe('End date of the period'),
+        })
+      )
+      .describe(
+        'Array of accounting period records. Present when CountOnly=false. Each period represents accounting period data.'
+      )
+      .optional(),
+    Count: z
+      .number()
+      .int()
+      .positive()
+      .describe('Total number of accounting period records. Present when CountOnly=true.')
+      .optional(),
+  };
+
+  private readonly samples: Array<string> = [];
 
   public register(server: McpServer) {
     server.registerTool(
@@ -30,33 +52,12 @@ export class GetAccountingPeriods {
         title: 'Get Accounting Periods',
         description:
           'Get List of all accounting periods' +
-          `Output Schema of this tool: ${JSON.stringify(
-            zodToJsonSchema(
-              z.object({
-                accountingPeriods: z
-                  .array(
-                    z.object({
-                      Id: z.string().optional().describe('Id of the Accounting Period'),
-                      StartDate: z.string().optional().describe('Start date of the period'),
-                      EndDate: z.string().optional().describe('End date of the period'),
-                    })
-                  )
-                  .describe(
-                    'Array of accounting period records. Present when CountOnly=false. Each period represents accounting period data.'
-                  )
-                  .optional(),
-                Count: z
-                  .number()
-                  .int()
-                  .positive()
-                  .describe(
-                    'Total number of accounting period records. Present when CountOnly=true.'
-                  )
-                  .optional(),
-              })
-            )
+          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
           )}`,
         inputSchema: NetSuiteHelper.paramSchema,
+        outputSchema: this.outputSchema,
       },
       async (input: GetAccountingPeriodsInput) => {
         const startTime = Date.now();

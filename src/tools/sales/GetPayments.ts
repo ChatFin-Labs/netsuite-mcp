@@ -24,10 +24,42 @@ export class GetPayments {
 
   private readonly Columns: SuiteScriptColumns = {
     Id: { name: 'internalid', type: 'id' },
-    CustomerName: { name: 'custbody_ava_customercompanyname', type: 'string' },
+    CustomerName: { name: 'companyname', join: 'customerMain', type: 'string' },
     Amount: { name: 'amount', type: 'string' },
     Date: { name: 'trandate', type: 'date' },
   };
+
+  private readonly outputSchema = {
+    payments: z
+      .array(
+        z.object({
+          Id: z.string().optional().describe('Id of the Payment'),
+          CustomerName: z
+            .string()
+            .optional()
+            .describe('Customer name for which the payment is created'),
+          Amount: z.string().optional().describe('Amount of the Payment'),
+          Date: z.string().optional().describe('Date of the payment'),
+        })
+      )
+      .describe(
+        'Array of payment records. Present when CountOnly=false. Each payment represents customer payment data.'
+      )
+      .optional(),
+    Count: z
+      .number()
+      .int()
+      .positive()
+      .describe('Total number of payment records. Present when CountOnly=true.')
+      .optional(),
+  };
+
+  private readonly samples: Array<string> = [
+    'Get me all payments of oct 2023',
+    'Show me all payments of customer {Customer Name}.',
+    'Show me all payments of customer {Customer Name} in {Period}',
+    'Show me all payments of customer {Customer Name} in {Period} order by Amount.',
+  ];
 
   public register(server: McpServer) {
     server.registerTool(
@@ -36,35 +68,12 @@ export class GetPayments {
         title: 'Get Payments',
         description:
           'Get List of Customer Payments' +
-          `Output Schema of this tool: ${JSON.stringify(
-            zodToJsonSchema(
-              z.object({
-                payments: z
-                  .array(
-                    z.object({
-                      Id: z.string().optional().describe('Id of the Payment'),
-                      CustomerName: z
-                        .string()
-                        .optional()
-                        .describe('Customer name for which the payment is created'),
-                      Amount: z.string().optional().describe('Amount of the Payment'),
-                      Date: z.string().optional().describe('Date of the payment'),
-                    })
-                  )
-                  .describe(
-                    'Array of payment records. Present when CountOnly=false. Each payment represents customer payment data.'
-                  )
-                  .optional(),
-                Count: z
-                  .number()
-                  .int()
-                  .positive()
-                  .describe('Total number of payment records. Present when CountOnly=true.')
-                  .optional(),
-              })
-            )
+          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
           )}`,
         inputSchema: NetSuiteHelper.paramSchema,
+        outputSchema: this.outputSchema,
       },
       async (input: GetPaymentsInput) => {
         const startTime = Date.now();

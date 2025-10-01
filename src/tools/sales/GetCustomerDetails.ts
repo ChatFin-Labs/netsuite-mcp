@@ -12,6 +12,17 @@ interface CustomerDetailsInput {
 export class GetCustomerDetails {
   private readonly toolName = 'get-customer-details';
 
+  private readonly outputSchema = {
+    customer: z
+      .object({
+        Id: z.number().describe('ID of the Customer'),
+        Name: z.string().describe('Name of the Customer'),
+      })
+      .describe('The matched customer details'),
+  };
+
+  private readonly samples: Array<string> = [];
+
   public register(server: McpServer) {
     server.registerTool(
       this.toolName,
@@ -19,21 +30,14 @@ export class GetCustomerDetails {
         title: 'Get Customer Details',
         description:
           'Find a specific customer by name or ID with fuzzy search capabilities' +
-          `Output Schema of this tool: ${JSON.stringify(
-            zodToJsonSchema(
-              z.object({
-                customer: z
-                  .object({
-                    Id: z.number().describe('ID of the Customer'),
-                    Name: z.string().describe('Name of the Customer'),
-                  })
-                  .describe('The matched customer details'),
-              })
-            )
+          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
           )}`,
         inputSchema: {
           searchValue: z.string().describe('Customer name or ID to search for'),
         },
+        outputSchema: this.outputSchema,
       },
       async (input: CustomerDetailsInput) => {
         const startTime = Date.now();

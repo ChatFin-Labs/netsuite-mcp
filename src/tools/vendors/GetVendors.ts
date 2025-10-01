@@ -32,6 +32,40 @@ export class GetVendors {
     AltEmail: { name: 'altemail', type: 'string' },
   };
 
+  private readonly outputSchema = {
+    vendors: z
+      .array(
+        z.object({
+          Id: z.string().optional().describe('Id of the Vendor'),
+          Name: z.string().optional().describe('Name of the Vendor'),
+          Email: z.string().optional().describe('Email of the Vendor'),
+          Phone: z.string().optional().describe('Phone number of the Vendor'),
+          OfficePhone: z.string().optional().describe('Office Phone number of the Vendor'),
+          Fax: z.string().optional().describe('Fax of the Vendor'),
+          AltEmail: z.string().optional().describe('Alternate Email of the Vendor'),
+        })
+      )
+      .describe(
+        'Array of vendor records. Present when CountOnly=false. Each vendor represents vendor data with contact information.'
+      )
+      .optional(),
+    Count: z
+      .number()
+      .int()
+      .positive()
+      .describe('Total number of vendor records. Present when CountOnly=true.')
+      .optional(),
+  };
+
+  private readonly samples: Array<string> = [
+    'Get Vendors',
+    'Get all the Vendors',
+    'Get contact information for Vendor',
+    'Get information for my Vendor',
+    'How to contact my Vendor',
+    'Get list of all vendors',
+  ];
+
   public register(server: McpServer) {
     server.registerTool(
       this.toolName,
@@ -39,38 +73,12 @@ export class GetVendors {
         title: 'Get Vendors',
         description:
           'Get List of all Vendors with contact information' +
-          `Output Schema of this tool: ${JSON.stringify(
-            zodToJsonSchema(
-              z.object({
-                vendors: z
-                  .array(
-                    z.object({
-                      Id: z.string().optional().describe('Id of the Vendor'),
-                      Name: z.string().optional().describe('Name of the Vendor'),
-                      Email: z.string().optional().describe('Email of the Vendor'),
-                      Phone: z.string().optional().describe('Phone number of the Vendor'),
-                      OfficePhone: z
-                        .string()
-                        .optional()
-                        .describe('Office Phone number of the Vendor'),
-                      Fax: z.string().optional().describe('Fax of the Vendor'),
-                      AltEmail: z.string().optional().describe('Alternate Email of the Vendor'),
-                    })
-                  )
-                  .describe(
-                    'Array of vendor records. Present when CountOnly=false. Each vendor represents vendor data with contact information.'
-                  )
-                  .optional(),
-                Count: z
-                  .number()
-                  .int()
-                  .positive()
-                  .describe('Total number of vendor records. Present when CountOnly=true.')
-                  .optional(),
-              })
-            )
+          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
           )}`,
         inputSchema: NetSuiteHelper.paramSchema,
+        outputSchema: this.outputSchema,
       },
       async (input: GetVendorsInput) => {
         const startTime = Date.now();

@@ -28,6 +28,27 @@ export class GetSubsidiaries {
     ParentId: { name: 'parent', type: 'id' },
   };
 
+  private readonly outputSchema = {
+    subsidiaries: z
+      .array(
+        z.object({
+          Id: z.string().optional().describe('Id of the Subsidiary'),
+          Name: z.string().optional().describe('Name of the Subsidiary'),
+          ParentId: z.string().optional().describe('Parent Id of the Subsidiary'),
+        })
+      )
+      .describe(
+        'Array of subsidiary records. Present when CountOnly=false. Each subsidiary represents subsidiary data.'
+      )
+      .optional(),
+  };
+
+  private readonly samples: Array<string> = [
+    'Get me all Subsidiaries',
+    'what are the subsidiaries',
+    'Show me all the Subsidiaries with Payroll as name',
+  ];
+
   public register(server: McpServer) {
     server.registerTool(
       this.toolName,
@@ -35,25 +56,12 @@ export class GetSubsidiaries {
         title: 'Get Subsidiaries',
         description:
           'Get List of all Subsidiaries' +
-          `Output Schema of this tool: ${JSON.stringify(
-            zodToJsonSchema(
-              z.object({
-                subsidiaries: z
-                  .array(
-                    z.object({
-                      Id: z.string().optional().describe('Id of the Subsidiary'),
-                      Name: z.string().optional().describe('Name of the Subsidiary'),
-                      ParentId: z.string().optional().describe('Parent Id of the Subsidiary'),
-                    })
-                  )
-                  .describe(
-                    'Array of subsidiary records. Present when CountOnly=false. Each subsidiary represents subsidiary data.'
-                  )
-                  .optional(),
-              })
-            )
+          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
           )}`,
         inputSchema: NetSuiteHelper.paramSchema,
+        outputSchema: this.outputSchema,
       },
       async (input: GetSubsidiariesInput) => {
         const startTime = Date.now();

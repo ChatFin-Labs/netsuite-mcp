@@ -39,6 +39,25 @@ export class GetAccountBalance {
     ParentId: { sql: 's.parent', type: 'number' as const },
   };
 
+  private readonly outputSchema = {
+    balances: z
+      .array(
+        z.object({
+          AccountNumber: z.string().describe('Number of the Account'),
+          Name: z.string().optional().describe('Name of the Account'),
+          Balance: z.number().optional().describe('Account Balance'),
+        })
+      )
+      .describe('Array of account balance records.'),
+  };
+
+  private readonly samples: Array<string> = [
+    'Get me the balance for account 1414 for OCT 2023',
+    'Show me the balance of Account ${AccountNum} for OCT 2023',
+    'Show me the account balance for ${AccountNum}',
+    'Show me the balance for Accounts ${AccountNum} for August - December 2023',
+  ];
+
   public register(server: McpServer) {
     server.registerTool(
       this.toolName,
@@ -46,20 +65,9 @@ export class GetAccountBalance {
         title: 'Get Account Balance',
         description:
           'Get Balance of Accounts based on Input Parameters. When retrieving balances for all accounts, do NOT invoke this function separately for each account. Instead, call this function **once** by passing all account numbers together as an array.' +
-          `Output Schema of this tool: ${JSON.stringify(
-            zodToJsonSchema(
-              z.object({
-                balances: z
-                  .array(
-                    z.object({
-                      AccountNumber: z.string().describe('Number of the Account'),
-                      Name: z.string().optional().describe('Name of the Account'),
-                      Balance: z.number().optional().describe('Account Balance'),
-                    })
-                  )
-                  .describe('Array of account balance records.'),
-              })
-            )
+          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
           )}`,
         inputSchema: {
           AccountNumbers: z
@@ -90,6 +98,7 @@ export class GetAccountBalance {
               'Is Subsidiary consolidated filter, this is considered based on Consolidated word in the Subsidiary Name filter. Default is false'
             ),
         },
+        outputSchema: this.outputSchema,
       },
       async (input: GetAccountBalanceInput) => {
         const startTime = Date.now();

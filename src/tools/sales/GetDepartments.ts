@@ -27,6 +27,28 @@ export class GetDepartments {
     Name: { name: 'name', type: 'string' },
   };
 
+  private readonly outputSchema = {
+    departments: z
+      .array(
+        z.object({
+          Id: z.string().optional().describe('Id of the Department'),
+          Name: z.string().optional().describe('Name of the Department'),
+        })
+      )
+      .describe(
+        'Array of department records. Present when CountOnly=false. Each department represents department data.'
+      )
+      .optional(),
+    Count: z
+      .number()
+      .int()
+      .positive()
+      .describe('Total number of department records. Present when CountOnly=true.')
+      .optional(),
+  };
+
+  private readonly samples: Array<string> = [];
+
   public register(server: McpServer) {
     server.registerTool(
       this.toolName,
@@ -34,30 +56,12 @@ export class GetDepartments {
         title: 'Get Departments',
         description:
           'Get List of all Departments' +
-          `Output Schema of this tool: ${JSON.stringify(
-            zodToJsonSchema(
-              z.object({
-                departments: z
-                  .array(
-                    z.object({
-                      Id: z.string().optional().describe('Id of the Department'),
-                      Name: z.string().optional().describe('Name of the Department'),
-                    })
-                  )
-                  .describe(
-                    'Array of department records. Present when CountOnly=false. Each department represents department data.'
-                  )
-                  .optional(),
-                Count: z
-                  .number()
-                  .int()
-                  .positive()
-                  .describe('Total number of department records. Present when CountOnly=true.')
-                  .optional(),
-              })
-            )
+          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
           )}`,
         inputSchema: NetSuiteHelper.paramSchema,
+        outputSchema: this.outputSchema,
       },
       async (input: GetDepartmentInput) => {
         const startTime = Date.now();
