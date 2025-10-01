@@ -3,7 +3,7 @@ import { transform } from "../../utils/transform";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { logger } from "../../utils/logger";
-import { zodToJsonSchema } from "zod-to-json-schema";
+import zodToJsonSchema from "zod-to-json-schema";
 
 interface GetAccountsInput {
   CountOnly?: boolean;
