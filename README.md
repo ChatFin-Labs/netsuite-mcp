@@ -9,7 +9,7 @@ A comprehensive Model Context Protocol (MCP) server for accessing NetSuite data 
 
 - **Comprehensive NetSuite Integration**: Access accounts, customers, vendors, transactions, and financial data
 - **Dual Server Modes**: HTTP server for web clients and STDIO server for MCP clients
-- **Advanced Logging**: File-based logging with rotation and configurable levels  
+- **Advanced Logging**: File-based logging with rotation and configurable levels
 - **Development Tools**: Ngrok integration for tunneling and MCP Inspector support
 - **Security**: CORS configuration and environment-based access controls
 - **Error Handling**: Robust error handling with structured logging
@@ -56,12 +56,13 @@ A comprehensive Model Context Protocol (MCP) server for accessing NetSuite data 
 2. Install `setup/SuiteScript_SearchRestlet.js` in your NetSuite SuiteScripts as a `RESTLet` and copy the URL for this suite script file.
 
 3. Configure required NetSuite settings:
+
    ```bash
    # Required
    NETSUITE_REST_URL=https://your-account-id.suitetalk.api.netsuite.com/services/rest/
    NETSUITE_SEARCH_REST_LET=https://your-suite-script-url
    NETSUITE_ACCESS_TOKEN=your_jwt_access_token_here
-   
+
    # Optional
    PORT=3000
    LOG_LEVEL=info
@@ -100,7 +101,7 @@ yarn global add @chatfinai/netsuite-mcp
 # Run HTTP server
 netsuite-mcp-http
 
-# Run STDIO server  
+# Run STDIO server
 netsuite-mcp-stdio
 ```
 
@@ -144,7 +145,7 @@ See the [`examples/claude-desktop-config.json`](examples/claude-desktop-config.j
 ### Option 4: Programmatic Usage
 
 ```typescript
-import { McpServerFactory } from '@chatfinai/netsuite-mcp';
+import { McpServerFactory } from "@chatfinai/netsuite-mcp";
 
 // Create and configure your MCP server
 const server = McpServerFactory.createServer();
@@ -152,12 +153,14 @@ const server = McpServerFactory.createServer();
 ```
 
 **See more examples:**
+
 - [Programmatic Usage Example](./examples/programmatic-usage.js)
 - [Claude Desktop Configuration](./examples/claude-desktop-config.json)
 
 ### Development Setup
 
 1. **Clone and install:**
+
    ```bash
    git clone https://github.com/ChatFinAI/netsuite-mcp.git
    cd netsuite-mcp
@@ -165,6 +168,7 @@ const server = McpServerFactory.createServer();
    ```
 
 2. **Configure environment:**
+
    ```bash
    cp .env.example .env
    # Edit .env with your NetSuite configuration
@@ -190,15 +194,17 @@ npm run inspector    # MCP debugging tool
 ### Running the Server
 
 #### HTTP Server Mode (Web Clients)
+
 ```bash
 # Start HTTP server (default port 3000)
 npm run start:http
 
-# Start with development tunneling  
+# Start with development tunneling
 npm run dev
 ```
 
 #### STDIO Server Mode (MCP Clients)
+
 ```bash
 # Start STDIO server for MCP clients
 npm run start:stdio
@@ -220,7 +226,7 @@ npm run dev            # Start HTTP server + ngrok tunnel
 npm run ngrok          # Start ngrok tunnel only
 npm run inspector      # Start MCP Inspector for debugging
 
-# Process management  
+# Process management
 npm run stop           # Stop all server processes
 ```
 
@@ -236,17 +242,20 @@ Both servers use the same core components for NetSuite integration and tool regi
 ## Available Tools
 
 ### Account Management
+
 - **`get-accounts`**: Retrieve chart of accounts with filtering, sorting, and pagination
 - **`get-account-balance`**: Get account balances for specific periods
 - **`get-accounting-periods`**: List all accounting periods
 - **`get-subsidiaries`**: Get subsidiary information
 
-### Customer & Vendor Management  
+### Customer & Vendor Management
+
 - **`get-customers`**: Retrieve customer information with contact details
 - **`get-customer-details`**: Get detailed customer information
 - **`get-vendors`**: List vendors with contact information
 
 ### Sales & Revenue
+
 - **`get-invoices`**: Retrieve invoices with customer and amount details
 - **`get-invoice-items`**: Get line items from invoices
 - **`get-credit-memos`**: List credit memos
@@ -254,11 +263,13 @@ Both servers use the same core components for NetSuite integration and tool regi
 - **`get-items`**: Retrieve sellable items catalog
 
 ### Financial Transactions
+
 - **`get-transactions`**: General transaction data
-- **`get-bills`**: Vendor bills and bill payments  
+- **`get-bills`**: Vendor bills and bill payments
 - **`get-journals`**: Journal entries
 
 ### Organization Data
+
 - **`get-departments`**: Department listings
 - **`get-locations`**: Location information
 - **`get-classes`**: Class information
@@ -267,6 +278,7 @@ Both servers use the same core components for NetSuite integration and tool regi
 ### Query Features
 
 All tools support:
+
 - **Filtering**: Field-based filtering with operators
 - **Sorting**: Multi-column sorting (ASC/DESC)
 - **Pagination**: Limit and offset support
@@ -279,12 +291,8 @@ All tools support:
 {
   "name": "get-accounts",
   "arguments": {
-    "Filters": [
-      {"Field": "Type", "Operator": "anyof", "Values": ["Income", "Expense"]}
-    ],
-    "Sort": [
-      {"Column": "AccountNumber", "Order": "ASC"}
-    ],
+    "Filters": [{ "Field": "Type", "Operator": "anyof", "Values": ["Income", "Expense"] }],
+    "Sort": [{ "Column": "AccountNumber", "Order": "ASC" }],
     "Limit": 50,
     "Offset": 0,
     "CountOnly": false
@@ -302,11 +310,12 @@ The project includes comprehensive ngrok configuration for development:
 # Start both server and tunnel
 yarn dev
 
-# Start tunnel only  
+# Start tunnel only
 yarn ngrok
 ```
 
 **Ngrok Features:**
+
 - Debug-level logging to `logs/ngrok.log` (JSON format)
 - Web interface at http://localhost:4040 for request inspection
 - Reserved domain support
@@ -325,24 +334,28 @@ This provides a web interface for testing MCP tools and debugging server behavio
 ### Logging System
 
 **File Logging** (when `LOG_TO_FILE=true`):
+
 - Logs written to `logs/app.log`
 - Automatic log rotation
 - Configurable file size and retention
 - JSON format for structured logging
 
 **Console Logging** (when `LOG_TO_FILE=false`):
+
 - Colorized console output
 - JSON format with color highlighting
 
 **Configuration:**
+
 ```bash
 LOG_LEVEL=info          # error, warn, info, debug
 LOG_TO_FILE=true        # Enable file logging
-LOG_MAX_SIZE=10m        # Max file size before rotation  
+LOG_MAX_SIZE=10m        # Max file size before rotation
 LOG_MAX_FILES=5         # Number of files to retain
 ```
 
 ### Project Files
+
 - [`.env.example`](.env.example) - Configuration template
 - [`examples/claude-desktop-config.json`](examples/claude-desktop-config.json) - Claude Desktop setup
 - [`examples/programmatic-usage.js`](examples/programmatic-usage.js) - API usage example
@@ -352,12 +365,14 @@ LOG_MAX_FILES=5         # Number of files to retain
 ### Authentication Issues
 
 **401 Authentication Error:**
+
 - Verify `NETSUITE_ACCESS_TOKEN` is set and valid
-- Check NetSuite integration record is active  
+- Check NetSuite integration record is active
 - Ensure tokens are not expired
 - Verify user permissions for REST Web Services
 
 **403 Forbidden Error:**
+
 - Check user role permissions for specific record types
 - Ensure SuiteQL feature is enabled in NetSuite
 - Verify access to required record types (Accounts, Customers, etc.)
@@ -365,11 +380,13 @@ LOG_MAX_FILES=5         # Number of files to retain
 ### Configuration Issues
 
 **Missing Environment Variables:**
+
 - Copy `.env.example` to `.env`
 - Fill in all required NetSuite configuration
 - Check console output for specific missing variables
 
 **RESTlet Connection Issues:**
+
 - Verify `NETSUITE_SEARCH_REST_LET` URL is correct
 - Ensure custom search RESTlet is deployed
 - Check RESTlet script and deployment IDs
@@ -377,22 +394,26 @@ LOG_MAX_FILES=5         # Number of files to retain
 ### Network & Connectivity
 
 **Connection Timeout:**
+
 - Confirm `NETSUITE_REST_URL` matches your account
 - Check firewall settings
 - Verify NetSuite account is accessible
 
 **CORS Issues (HTTP Mode):**
+
 - Configure `ALLOWED_ORIGINS` for production
 - Check browser developer tools for CORS errors
 
 ### Development Issues
 
 **Build Failures:**
+
 - Run `yarn clean` then `yarn build`
 - Check TypeScript errors in console
 - Verify all dependencies are installed
 
 **Ngrok Tunnel Issues:**
+
 - Verify `NGROK_AUTH_TOKEN` and `NGROK_DOMAIN` are set
 - Check ngrok account has available tunnels
 - Review `logs/ngrok.log` for connection details

@@ -3,16 +3,17 @@ import { transform } from "../../utils/transform";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { logger } from "../../utils/logger";
+import zodToJsonSchema from "zod-to-json-schema";
 
 interface GetAccountingPeriodsInput {
   CountOnly?: boolean;
   OrderBy?: {
     Column: string;
-    SortOrder?: 'DESC' | 'ASC' | '';
+    SortOrder?: "DESC" | "ASC" | "";
   };
   Filters?: Array<{
     Column: string;
-    Operator: '<' | '<=' | '>' | '>=' | '=' | '!=' | 'Like' | 'Not_Like';
+    Operator: "<" | "<=" | ">" | ">=" | "=" | "!=" | "Like" | "Not_Like";
     Value: string;
   }>;
   Limit?: number;
@@ -21,36 +22,42 @@ interface GetAccountingPeriodsInput {
 
 export class GetAccountingPeriods {
   private readonly toolName = "get-accounting-periods";
+  private readonly outputSchema = {
+    accountingPeriods: z
+      .array(
+        z.object({
+          Id: z.string().optional().describe("Id of the Accounting Period"),
+          StartDate: z.string().optional().describe("Start date of the period"),
+          EndDate: z.string().optional().describe("End date of the period"),
+        })
+      )
+      .describe(
+        "Array of accounting period records. Present when CountOnly=false. Each period represents accounting period data."
+      )
+      .optional(),
+    Count: z
+      .number()
+      .int()
+      .positive()
+      .describe("Total number of accounting period records. Present when CountOnly=true.")
+      .optional(),
+  };
+
+  private readonly samples: Array<string> = [];
 
   public register(server: McpServer) {
     server.registerTool(
       this.toolName,
       {
         title: "Get Accounting Periods",
-        description: "Get List of all accounting periods",
+        description:
+          "Get List of all accounting periods" +
+          `\n${this.samples.length > 0 ? "Example Prompts:\n" + this.samples.join("\n") : ""}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
+          )}`,
         inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          accountingPeriods: z
-            .array(
-              z.object({
-                Id: z.string().optional().describe("Id of the Accounting Period"),
-                StartDate: z.string().optional().describe("Start date of the period"),
-                EndDate: z.string().optional().describe("End date of the period"),
-              })
-            )
-            .describe(
-              "Array of accounting period records. Present when CountOnly=false. Each period represents accounting period data."
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe(
-              "Total number of accounting period records. Present when CountOnly=true."
-            )
-            .optional(),
-        },
+        outputSchema: this.outputSchema,
       },
       async (input: GetAccountingPeriodsInput) => {
         const startTime = Date.now();
@@ -70,16 +77,10 @@ export class GetAccountingPeriods {
             EndDate: { sql: "ap.endDate", type: "date" },
           };
 
-          const formattedSQL = NetSuiteHelper.formatSQL(
-            sql,
-            Columns,
-            input,
-            "",
-            {
-              Column: "StartDate",
-              SortOrder: "Desc",
-            }
-          );
+          const formattedSQL = NetSuiteHelper.formatSQL(sql, Columns, input, "", {
+            Column: "StartDate",
+            SortOrder: "Desc",
+          });
 
           let totalData = [];
           let continueLoop = true;
@@ -92,10 +93,7 @@ export class GetAccountingPeriods {
             }
 
             // Use SuiteQL helper to execute the query
-            const data = await NetSuiteHelper.executeSuiteQL(
-              formattedSQL,
-              dataOffset
-            );
+            const data = await NetSuiteHelper.executeSuiteQL(formattedSQL, dataOffset);
 
             if (input.CountOnly === true) {
               const countResult = { Count: data.count };
@@ -148,8 +146,7 @@ export class GetAccountingPeriods {
             },
           });
 
-          const errorMessage =
-            error instanceof Error ? error.message : "Unknown error occurred";
+          const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 
           return {
             content: [

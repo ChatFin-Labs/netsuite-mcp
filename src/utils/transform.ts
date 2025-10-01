@@ -5,15 +5,15 @@ import {
   JsonObject,
   JsonProperty,
   PropertyMatchingRule,
-} from 'json2typescript';
-import { DateUtil } from './date';
-import { Dictionary, GenDictionary } from '../Models/General';
+} from "json2typescript";
+import { DateUtil } from "./date";
+import { Dictionary, GenDictionary } from "../Models/General";
 
 export function transform(
   jsonArray: Record<string, unknown>[],
   propertyNames: Dictionary<{
     name?: string;
-    type: 'string' | 'number' | 'date' | 'boolean';
+    type: "string" | "number" | "date" | "boolean";
     format?: string;
   }>
 ): Record<string, unknown>[] {
@@ -28,23 +28,23 @@ export function transform(
       );
       if (matchingKey) {
         if (obj[matchingKey] !== null && obj[matchingKey] !== undefined) {
-          if (propertyNames[propertyName].type === 'number') {
+          if (propertyNames[propertyName].type === "number") {
             newObj[sourceKey] = parseFloat(String(obj[matchingKey]));
           } else if (
-            propertyNames[propertyName].type === 'date' &&
+            propertyNames[propertyName].type === "date" &&
             propertyNames[propertyName].format !== undefined
           ) {
             newObj[sourceKey] = DateUtil.FormatToISO(
               String(obj[matchingKey]),
-              propertyNames[propertyName].format || ''
+              propertyNames[propertyName].format || ""
             );
-          } else if (propertyNames[propertyName].type === 'boolean') {
+          } else if (propertyNames[propertyName].type === "boolean") {
             newObj[sourceKey] =
-              obj[matchingKey].toString() === '1'
+              obj[matchingKey].toString() === "1"
                 ? true
-                : obj[matchingKey].toString() === '0'
-                ? false
-                : obj[matchingKey];
+                : obj[matchingKey].toString() === "0"
+                  ? false
+                  : obj[matchingKey];
           } else newObj[sourceKey] = obj[matchingKey];
         }
       }
@@ -55,7 +55,7 @@ export function transform(
 export function transformArray(
   jsonArray: unknown[][],
   propertyNames: Dictionary<{
-    type: 'string' | 'number' | 'date' | 'boolean' | 'id';
+    type: "string" | "number" | "date" | "boolean" | "id";
     format?: string;
   }>
 ): Record<string, unknown>[] {
@@ -63,15 +63,15 @@ export function transformArray(
     const newObj: Record<string, unknown> = {};
     Object.keys(propertyNames).forEach((propertyName, index) => {
       if (obj[index]) {
-        if (propertyNames[propertyName].type === 'number') {
+        if (propertyNames[propertyName].type === "number") {
           newObj[propertyName] = parseFloat(String(obj[index]));
         } else if (
-          propertyNames[propertyName].type === 'date' &&
+          propertyNames[propertyName].type === "date" &&
           propertyNames[propertyName].format !== undefined
         ) {
           newObj[propertyName] = DateUtil.FormatToISO(
             String(obj[index]),
-            propertyNames[propertyName].format || ''
+            propertyNames[propertyName].format || ""
           );
         } else newObj[propertyName] = obj[index];
       }

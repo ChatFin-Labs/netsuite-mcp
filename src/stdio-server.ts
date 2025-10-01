@@ -19,7 +19,7 @@ async function main() {
 
   // Create STDIO transport
   const transport = new StdioServerTransport();
-  
+
   // Connect the server to the transport
   await server.connect(transport);
 
@@ -27,7 +27,7 @@ async function main() {
   logger.error({
     Module: "stdio-server",
     Message: "NetSuite MCP Server started in STDIO mode",
-  })
+  });
 }
 
 // Setup graceful shutdown

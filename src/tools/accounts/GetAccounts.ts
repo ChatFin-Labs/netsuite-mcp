@@ -3,16 +3,17 @@ import { transform } from "../../utils/transform";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { logger } from "../../utils/logger";
+import zodToJsonSchema from "zod-to-json-schema";
 
 interface GetAccountsInput {
   CountOnly?: boolean;
   OrderBy?: {
     Column: string;
-    SortOrder?: 'DESC' | 'ASC' | '';
+    SortOrder?: "DESC" | "ASC" | "";
   };
   Filters?: Array<{
     Column: string;
-    Operator: '<' | '<=' | '>' | '>=' | '=' | '!=' | 'Like' | 'Not_Like';
+    Operator: "<" | "<=" | ">" | ">=" | "=" | "!=" | "Like" | "Not_Like";
     Value: string;
   }>;
   Limit?: number;
@@ -25,52 +26,63 @@ export class GetAccounts {
     ? process.env.NETSUITE_ACCOUNT_TYPES.split(",").map((type) => type.trim())
     : [];
 
+  private readonly outputSchema = {
+    accounts: z
+      .array(
+        z.object({
+          Id: z.string().optional().describe("Id of the Account"),
+          Name: z.string().optional().describe("Name of the Account"),
+          AccountNumber: z.string().optional().describe("Number of the Account"),
+          ParentNumber: z
+            .string()
+            .optional()
+            .describe(
+              "Parent Number of the Account. Hierarchy can be created by referencing this with AccountNumber property"
+            ),
+          Type:
+            this.accountTypes.length > 0
+              ? z
+                  .enum(this.accountTypes as [string, ...string[]])
+                  .optional()
+                  .describe("Type of the Account")
+              : z.string().optional().describe("Type of the Account"),
+        })
+      )
+      .describe(
+        "Array of account records. Present when CountOnly=false. Each account represents account data."
+      )
+      .optional(),
+    Count: z
+      .number()
+      .int()
+      .positive()
+      .describe("Total number of account records. Present when CountOnly=true.")
+      .optional(),
+  };
+
+  private readonly samples: Array<string> = [
+    "Get all Accounts",
+    "Show me all accounts",
+    "Show me all the expense accounts",
+    "Show me all the accounts with Payroll in name",
+    "Show me all Asset accounts",
+    "Get the total number of Accounts",
+    "get me all the Customer Accounts",
+  ];
+
   public register(server: McpServer) {
     server.registerTool(
       this.toolName,
       {
         title: "Get Accounts",
         description:
-          "Get List of Accounts, this can be used to get all Accounts or specific Accounts information",
+          "Get List of Accounts, this can be used to get all Accounts or specific Accounts information" +
+          `\n${this.samples.length > 0 ? "Example Prompts:\n" + this.samples.join("\n") : ""}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
+          )}`,
         inputSchema: NetSuiteHelper.paramSchema,
-        outputSchema: {
-          accounts: z
-            .array(
-              z.object({
-                Id: z.string().optional().describe("Id of the Account"),
-                Name: z.string().optional().describe("Name of the Account"),
-                AccountNumber: z
-                  .string()
-                  .optional()
-                  .describe("Number of the Account"),
-                ParentNumber: z
-                  .string()
-                  .optional()
-                  .describe(
-                    "Parent Number of the Account. Hierarchy can be created by referencing this with AccountNumber property"
-                  ),
-                Type:
-                  this.accountTypes.length > 0
-                    ? z
-                        .enum(this.accountTypes as [string, ...string[]])
-                        .optional()
-                        .describe("Type of the Account")
-                    : z.string().optional().describe("Type of the Account"),
-              })
-            )
-            .describe(
-              "Array of account records. Present when CountOnly=false. Each account represents account data."
-            )
-            .optional(),
-          Count: z
-            .number()
-            .int()
-            .positive()
-            .describe(
-              "Total number of account records. Present when CountOnly=true."
-            )
-            .optional(),
-        },
+        outputSchema: this.outputSchema,
       },
       async (input: GetAccountsInput) => {
         const startTime = Date.now();
@@ -90,16 +102,10 @@ export class GetAccounts {
             Type: { sql: "BUILTIN.DF(a.acctType)", type: "string" },
           };
 
-          const formattedSQL = NetSuiteHelper.formatSQL(
-            sql,
-            Columns,
-            input,
-            "",
-            {
-              Column: "Name",
-              SortOrder: "Asc",
-            }
-          );
+          const formattedSQL = NetSuiteHelper.formatSQL(sql, Columns, input, "", {
+            Column: "Name",
+            SortOrder: "Asc",
+          });
 
           // Get SuiteQL tool handler - we'll need to call SuiteQL with the formatted query
           // For now, placeholder data structure matching v1 pattern
@@ -114,10 +120,7 @@ export class GetAccounts {
             }
 
             // Use SuiteQL helper to execute the query (v1 pattern)
-            const data = await NetSuiteHelper.executeSuiteQL(
-              formattedSQL,
-              dataOffset
-            );
+            const data = await NetSuiteHelper.executeSuiteQL(formattedSQL, dataOffset);
 
             if (input.CountOnly === true) {
               const countResult = { Count: data.count };
@@ -173,8 +176,7 @@ export class GetAccounts {
             },
           });
 
-          const errorMessage =
-            error instanceof Error ? error.message : "Unknown error occurred";
+          const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 
           return {
             content: [
@@ -206,7 +208,7 @@ export class GetAccounts {
     data.forEach((item) => {
       if (item.ParentId) {
         const parentItem = idToItemMap.get(item.ParentId);
-        if (parentItem && typeof parentItem === 'object' && parentItem !== null) {
+        if (parentItem && typeof parentItem === "object" && parentItem !== null) {
           const parentObj = parentItem as Record<string, unknown>;
           item.ParentNumber = parentObj.AccountNumber;
         }

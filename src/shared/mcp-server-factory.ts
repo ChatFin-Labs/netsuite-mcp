@@ -1,8 +1,8 @@
-import dotenv from 'dotenv';
-import path from 'path';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { ILogger } from '../Models/General';
-import { logger } from '../utils/logger';
+import dotenv from "dotenv";
+import path from "path";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { ILogger } from "../Models/General";
+import { logger } from "../utils/logger";
 import { GetAccountBalance } from "../tools/accounts/GetAccountBalance";
 import { GetAccountingPeriods } from "../tools/accounts/GetAccountingPeriods";
 import { GetSubsidiaries } from "../tools/accounts/GetSubsidiaries";
@@ -21,7 +21,7 @@ import { GetBills } from "../tools/transactions/GetBills";
 import { GetJournals } from "../tools/transactions/GetJournals";
 import { GetCustomerDetails } from "../tools/sales/GetCustomerDetails";
 import { GetClasses } from "../tools/sales/GetClasses";
-import { GetAccounts } from '../tools/accounts/GetAccounts';
+import { GetAccounts } from "../tools/accounts/GetAccounts";
 
 export interface EnvironmentConfig {
   NETSUITE_REST_URL?: string;
@@ -43,8 +43,8 @@ export interface ServerConfig {
 
 export class McpServerFactory {
   private static readonly DEFAULT_CONFIG: ServerConfig = {
-    name: 'netsuite-mcp-server',
-    version: '1.0.0',
+    name: "netsuite-mcp-server",
+    version: "1.0.0",
   };
 
   /**
@@ -74,7 +74,6 @@ export class McpServerFactory {
     new GetJournals().register(server);
   }
 
-
   /**
    * Load environment variables with validation
    */
@@ -87,12 +86,12 @@ export class McpServerFactory {
 
       if (result.error) {
         logger.error({
-          Module: 'environment',
+          Module: "environment",
           Message: `Failed to load environment variables from ${envPath}: ${result.error.message}`,
         });
       } else {
         logger.error({
-          Module: 'environment',
+          Module: "environment",
           Message: `Environment variables loaded from ${envPath}`,
         });
       }
@@ -107,16 +106,16 @@ export class McpServerFactory {
    * Validate required environment variables
    */
   static validateEnvironment(config: EnvironmentConfig, logger: ILogger): boolean {
-    const requiredEnvVars = ['NETSUITE_REST_URL', 'NETSUITE_ACCESS_TOKEN'];
+    const requiredEnvVars = ["NETSUITE_REST_URL", "NETSUITE_ACCESS_TOKEN"];
 
     const missingEnvVars = requiredEnvVars.filter(
       (varName) => !config[varName as keyof EnvironmentConfig]
     );
 
     if (missingEnvVars.length > 0) {
-      const message = `Missing required environment variables: ${missingEnvVars.join(', ')}`;
+      const message = `Missing required environment variables: ${missingEnvVars.join(", ")}`;
       logger.error({
-        Module: 'environment',
+        Module: "environment",
         Message: message,
       });
 
@@ -128,10 +127,10 @@ export class McpServerFactory {
       try {
         new URL(config.NETSUITE_REST_URL);
       } catch {
-        const message = 'NETSUITE_REST_URL is not a valid URL format';
+        const message = "NETSUITE_REST_URL is not a valid URL format";
 
         logger.error({
-          Module: 'environment',
+          Module: "environment",
           Message: message,
           ObjectMsg: { url: config.NETSUITE_REST_URL },
         });
@@ -141,11 +140,11 @@ export class McpServerFactory {
     }
 
     // Validate token format (basic check for JWT-like structure)
-    if (config.NETSUITE_ACCESS_TOKEN && !config.NETSUITE_ACCESS_TOKEN.includes('.')) {
-      const message = 'NETSUITE_ACCESS_TOKEN does not appear to be a valid JWT token';
+    if (config.NETSUITE_ACCESS_TOKEN && !config.NETSUITE_ACCESS_TOKEN.includes(".")) {
+      const message = "NETSUITE_ACCESS_TOKEN does not appear to be a valid JWT token";
 
       logger.error({
-        Module: 'environment',
+        Module: "environment",
         Message: message,
       });
 
@@ -154,10 +153,10 @@ export class McpServerFactory {
 
     // Validate numeric values
     if (config.PORT && isNaN(parseInt(config.PORT))) {
-      const message = 'PORT must be a valid number';
+      const message = "PORT must be a valid number";
 
       logger.error({
-        Module: 'environment',
+        Module: "environment",
         Message: message,
       });
 
@@ -165,8 +164,8 @@ export class McpServerFactory {
     }
 
     logger.info({
-      Module: 'environment',
-      Message: 'All required environment variables are present and valid',
+      Module: "environment",
+      Message: "All required environment variables are present and valid",
     });
 
     return true;
@@ -177,19 +176,19 @@ export class McpServerFactory {
    */
   static logEnvironmentConfig(config: EnvironmentConfig, logger: ILogger): void {
     const envConfig = {
-      NETSUITE_REST_URL: config.NETSUITE_REST_URL ? '✓ Set' : '✗ Missing',
-      NETSUITE_ACCESS_TOKEN: config.NETSUITE_ACCESS_TOKEN ? '✓ Set' : '✗ Missing',
-      NETSUITE_ACCOUNT_TYPES: config.NETSUITE_ACCOUNT_TYPES ? '✓ Set' : '- Optional',
-      LOG_LEVEL: config.LOG_LEVEL || 'info (default)',
-      LOG_TO_FILE: config.LOG_TO_FILE || 'false (default)',
-      PORT: config.PORT || '3000 (default)',
-      NGROK_DOMAIN: config.NGROK_DOMAIN || 'Not Set',
-      ALLOWED_HOSTS: config.ALLOWED_HOSTS || 'Not Set',
+      NETSUITE_REST_URL: config.NETSUITE_REST_URL ? "✓ Set" : "✗ Missing",
+      NETSUITE_ACCESS_TOKEN: config.NETSUITE_ACCESS_TOKEN ? "✓ Set" : "✗ Missing",
+      NETSUITE_ACCOUNT_TYPES: config.NETSUITE_ACCOUNT_TYPES ? "✓ Set" : "- Optional",
+      LOG_LEVEL: config.LOG_LEVEL || "info (default)",
+      LOG_TO_FILE: config.LOG_TO_FILE || "false (default)",
+      PORT: config.PORT || "3000 (default)",
+      NGROK_DOMAIN: config.NGROK_DOMAIN || "Not Set",
+      ALLOWED_HOSTS: config.ALLOWED_HOSTS || "Not Set",
     };
 
     logger.info({
-      Module: 'environment',
-      Message: 'Environment configuration',
+      Module: "environment",
+      Message: "Environment configuration",
       ObjectMsg: envConfig,
     });
   }
@@ -208,18 +207,18 @@ export class McpServerFactory {
 
     // Add a netsuite greeting resource
     server.registerResource(
-      'greeting',
-      'greeting://welcome',
+      "greeting",
+      "greeting://welcome",
       {
-        title: 'Welcome Message',
-        description: 'A netsuite welcome message for the MCP server',
-        mimeType: 'text/plain',
+        title: "Welcome Message",
+        description: "A netsuite welcome message for the MCP server",
+        mimeType: "text/plain",
       },
       async (uri) => ({
         contents: [
           {
             uri: uri.href,
-            text: 'Welcome to the NetSuite MCP Server! This server provides an API call tool that waits 5 seconds and fetches example JSON data.',
+            text: "Welcome to the NetSuite MCP Server! This server provides an API call tool that waits 5 seconds and fetches example JSON data.",
           },
         ],
       })
@@ -236,7 +235,7 @@ export class McpServerFactory {
       const message = `${signal} received, shutting down gracefully`;
 
       logger.info({
-        Module: 'app',
+        Module: "app",
         Message: message,
       });
 
@@ -247,7 +246,7 @@ export class McpServerFactory {
       process.exit(0);
     };
 
-    process.on('SIGTERM', () => handleShutdown('SIGTERM'));
-    process.on('SIGINT', () => handleShutdown('SIGINT'));
+    process.on("SIGTERM", () => handleShutdown("SIGTERM"));
+    process.on("SIGINT", () => handleShutdown("SIGINT"));
   }
 }

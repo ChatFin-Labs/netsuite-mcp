@@ -1,11 +1,9 @@
-
 import { createHash, createHmac } from "crypto";
 import * as fs from "fs";
 import { GenDictionary } from "../Models/General";
 import path from "path";
 import { localstorage } from "./localstorage";
 import { v4 as uuidv4 } from "uuid";
-
 
 const getUUID = (): string => {
   return uuidv4();
@@ -30,7 +28,11 @@ const hasValidVar = (content: string): boolean => {
   return pattern.test(content);
 };
 
-function arrayHas<T extends Record<string, unknown>>(array: T[], prop: keyof T, value: unknown): boolean {
+function arrayHas<T extends Record<string, unknown>>(
+  array: T[],
+  prop: keyof T,
+  value: unknown
+): boolean {
   return array.some((item) => item[prop] === value);
 }
 
@@ -57,11 +59,7 @@ const sanitizeFileName = (fileName: string): boolean => {
   return sanitizeFileNameRegex.test(fileName);
 };
 
-const getFolderPath = (
-  userId: number,
-  fileName?: string,
-  subFolder?: string
-): string => {
+const getFolderPath = (userId: number, fileName?: string, subFolder?: string): string => {
   // Base user folder path
   let baseFolderPath = path.join("UserFiles", `User_${userId}`);
 
@@ -137,17 +135,10 @@ function getMaxOccurredElement<T>(arr: T[]): T | null {
 
 const formatSize = (size: number): string => {
   const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
-  return (
-    +(size / Math.pow(1024, i)).toFixed(2) * 1 +
-    " " +
-    ["B", "KB", "MB", "GB", "TB"][i]
-  );
+  return +(size / Math.pow(1024, i)).toFixed(2) * 1 + " " + ["B", "KB", "MB", "GB", "TB"][i];
 };
 
-const trim = (
-  matcher: "Execute" | "Respond" | "UserErr" | "AIErr",
-  input: string
-): string => {
+const trim = (matcher: "Execute" | "Respond" | "UserErr" | "AIErr", input: string): string => {
   return input.replace(matcher + ":", "").trim();
 };
 

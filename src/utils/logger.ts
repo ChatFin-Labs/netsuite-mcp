@@ -57,18 +57,11 @@ function getLogger(): winston.Logger {
         new winston.transports.File({
           filename: logFilePath,
           level: logLevel,
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.json()
-          ),
+          format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
           handleExceptions: true,
           handleRejections: true,
-          maxsize: process.env.LOG_MAX_SIZE
-            ? parseSize(process.env.LOG_MAX_SIZE)
-            : 10485760, // 10MB default
-          maxFiles: process.env.LOG_MAX_FILES
-            ? parseInt(process.env.LOG_MAX_FILES)
-            : 5,
+          maxsize: process.env.LOG_MAX_SIZE ? parseSize(process.env.LOG_MAX_SIZE) : 10485760, // 10MB default
+          maxFiles: process.env.LOG_MAX_FILES ? parseInt(process.env.LOG_MAX_FILES) : 5,
         })
       );
     } else {
@@ -100,7 +93,7 @@ function getLogger(): winston.Logger {
       });
     }
   }
-  
+
   return winstonLogger;
 }
 
@@ -110,8 +103,7 @@ function logAny(level: "info" | "error" | "debug", obj: ILog): void {
   logObj.t = logObj.t ?? DateUtil.getISO();
   const message = logObj.Message || "";
   delete logObj.Message;
-  if (!logObj.CorrelationId)
-    logObj.CorrelationId = localstorage.get<string>("CorrelationId");
+  if (!logObj.CorrelationId) logObj.CorrelationId = localstorage.get<string>("CorrelationId");
   getLogger().log(level, { message, ...logObj });
 }
 

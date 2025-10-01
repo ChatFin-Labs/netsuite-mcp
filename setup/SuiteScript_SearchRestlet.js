@@ -67,9 +67,7 @@ function postProcess(request) {
       for (var pl = 0; pl < paged.pageRanges.length; pl++) {
         var currentPage = paged.fetch({ index: paged.pageRanges[pl].index });
 
-        debug.push(
-          `pageRanges index: ${pl}. currentPage length: ${currentPage.data.length}`
-        );
+        debug.push(`pageRanges index: ${pl}. currentPage length: ${currentPage.data.length}`);
 
         // Loop on currentPage data
         for (var cp = 0; cp < currentPage.data.length; cp++) {

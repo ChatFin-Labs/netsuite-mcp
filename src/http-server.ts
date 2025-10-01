@@ -20,8 +20,7 @@ McpServerFactory.logEnvironmentConfig(envConfig, logger);
 
 class NetSuiteMcpServer {
   private app: express.Application;
-  private transports: { [sessionId: string]: StreamableHTTPServerTransport } =
-    {};
+  private transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
   private sessionTimers: { [sessionId: string]: ReturnType<typeof setTimeout> } = {};
   private readonly port: number;
   private readonly SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
@@ -36,10 +35,11 @@ class NetSuiteMcpServer {
 
   private setupMiddleware(): void {
     // CORS configuration for browser-based clients
-    const allowedOrigins = process.env.NODE_ENV === 'production' 
-      ? (process.env.ALLOWED_ORIGINS?.split(',') || ['https://claude.ai'])
-      : "*";
-    
+    const allowedOrigins =
+      process.env.NODE_ENV === "production"
+        ? process.env.ALLOWED_ORIGINS?.split(",") || ["https://claude.ai"]
+        : "*";
+
     this.app.use(
       cors({
         origin: allowedOrigins,
@@ -72,26 +72,29 @@ class NetSuiteMcpServer {
     const server = McpServerFactory.createServer();
 
     logger.info({
-      Module: 'MCP_SERVER',
-      Message: 'MCP Server configured with tools and resources'
+      Module: "MCP_SERVER",
+      Message: "MCP Server configured with tools and resources",
     });
     return server;
   }
 
   private setupSessionCleanup(): void {
     // Clean up abandoned sessions every 5 minutes
-    setInterval(() => {
-      Object.keys(this.transports).forEach(sessionId => {
-        // Check if we have a timer for this session, if not it may be abandoned
-        if (!this.sessionTimers[sessionId]) {
-          logger.info({
-            Module: "session-cleanup",
-            Message: `Found session without timer, cleaning up: ${sessionId}`,
-          });
-          this.cleanupSession(sessionId);
-        }
-      });
-    }, 5 * 60 * 1000);
+    setInterval(
+      () => {
+        Object.keys(this.transports).forEach((sessionId) => {
+          // Check if we have a timer for this session, if not it may be abandoned
+          if (!this.sessionTimers[sessionId]) {
+            logger.info({
+              Module: "session-cleanup",
+              Message: `Found session without timer, cleaning up: ${sessionId}`,
+            });
+            this.cleanupSession(sessionId);
+          }
+        });
+      },
+      5 * 60 * 1000
+    );
   }
 
   private resetSessionTimer(sessionId: string): void {
@@ -121,7 +124,7 @@ class NetSuiteMcpServer {
         logger.error({
           Module: "session-cleanup",
           Message: "Error cleaning up transport",
-          ObjectMsg: { sessionId, error: error instanceof Error ? error.message : String(error) }
+          ObjectMsg: { sessionId, error: error instanceof Error ? error.message : String(error) },
         });
       }
     }
@@ -170,36 +173,25 @@ class NetSuiteMcpServer {
         authorization_servers: [`http://localhost:${this.port}`],
         scopes_supported: ["mcp:tools", "mcp:resources"],
         resource_name: "NetSuite MCP Server",
-        resource_documentation:
-          "A netsuite MCP server with delayed API call tool",
+        resource_documentation: "A netsuite MCP server with delayed API call tool",
       });
     });
 
     // OAuth client registration endpoint (simplified implementation)
     this.app.post("/register", (req, res) => {
-      const {
-        redirect_uris,
-        token_endpoint_auth_method = "client_secret_post",
-      } = req.body;
+      const { redirect_uris, token_endpoint_auth_method = "client_secret_post" } = req.body;
 
-      if (
-        !redirect_uris ||
-        !Array.isArray(redirect_uris) ||
-        redirect_uris.length === 0
-      ) {
+      if (!redirect_uris || !Array.isArray(redirect_uris) || redirect_uris.length === 0) {
         return res.status(400).json({
           error: "invalid_client_metadata",
-          error_description:
-            "redirect_uris is required and must be a non-empty array",
+          error_description: "redirect_uris is required and must be a non-empty array",
         });
       }
 
       // Generate client credentials
       const clientId = `client_${randomUUID()}`;
       const clientSecret =
-        token_endpoint_auth_method === "none"
-          ? undefined
-          : `secret_${randomUUID()}`;
+        token_endpoint_auth_method === "none" ? undefined : `secret_${randomUUID()}`;
 
       const response: {
         client_id: string;
@@ -397,10 +389,7 @@ class NetSuiteMcpServer {
     });
 
     // Reusable handler for GET and DELETE requests
-    const handleSessionRequest = async (
-      req: express.Request,
-      res: express.Response
-    ) => {
+    const handleSessionRequest = async (req: express.Request, res: express.Response) => {
       const sessionId = req.headers["mcp-session-id"] as string | undefined;
       if (!sessionId || !this.transports[sessionId]) {
         // logger.warn(`Invalid or missing session ID: ${sessionId}`);

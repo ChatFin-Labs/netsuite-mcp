@@ -1,13 +1,14 @@
-import { NetSuiteHelper } from '../helper';
-import { transformArray, transform } from '../../utils/transform';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
-import { logger } from '../../utils/logger';
-import { DateUtil } from '../../utils/date';
-import { request } from '../../utils/http';
-import lodash from 'lodash';
-import { fuzzySearch } from '../../utils/fuzzySearch';
-import { GenDictionary } from '../../Models/General';
+import { NetSuiteHelper } from "../helper";
+import { transformArray, transform } from "../../utils/transform";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import { logger } from "../../utils/logger";
+import { DateUtil } from "../../utils/date";
+import { request } from "../../utils/http";
+import lodash from "lodash";
+import { fuzzySearch } from "../../utils/fuzzySearch";
+import { GenDictionary } from "../../Models/General";
+import zodToJsonSchema from "zod-to-json-schema";
 
 interface GetAccountBalanceInput {
   AccountNumbers: string[];
@@ -29,71 +30,82 @@ interface BalanceData {
   Balance: number;
 }
 
-
-
 export class GetAccountBalance {
-  private readonly toolName = 'get-account-balance';
-  
+  private readonly toolName = "get-account-balance";
+
   private readonly Columns = {
-    Id: { sql: 's.Id', type: 'number' as const },
-    Name: { sql: 's.Name', type: 'string' as const },
-    ParentId: { sql: 's.parent', type: 'number' as const },
+    Id: { sql: "s.Id", type: "number" as const },
+    Name: { sql: "s.Name", type: "string" as const },
+    ParentId: { sql: "s.parent", type: "number" as const },
   };
+
+  private readonly outputSchema = {
+    balances: z
+      .array(
+        z.object({
+          AccountNumber: z.string().describe("Number of the Account"),
+          Name: z.string().optional().describe("Name of the Account"),
+          Balance: z.number().optional().describe("Account Balance"),
+        })
+      )
+      .describe("Array of account balance records."),
+  };
+
+  private readonly samples: Array<string> = [
+    "Get me the balance for account 1414 for OCT 2023",
+    "Show me the balance of Account ${AccountNum} for OCT 2023",
+    "Show me the account balance for ${AccountNum}",
+    "Show me the balance for Accounts ${AccountNum} for August - December 2023",
+  ];
 
   public register(server: McpServer) {
     server.registerTool(
       this.toolName,
       {
-        title: 'Get Account Balance',
+        title: "Get Account Balance",
         description:
-          'Get Balance of Accounts based on Input Parameters. When retrieving balances for all accounts, do NOT invoke this function separately for each account. Instead, call this function **once** by passing all account numbers together as an array.',
+          "Get Balance of Accounts based on Input Parameters. When retrieving balances for all accounts, do NOT invoke this function separately for each account. Instead, call this function **once** by passing all account numbers together as an array." +
+          `\n${this.samples.length > 0 ? "Example Prompts:\n" + this.samples.join("\n") : ""}` +
+          `\nOutput Schema of this tool: ${JSON.stringify(
+            zodToJsonSchema(z.object(this.outputSchema))
+          )}`,
         inputSchema: {
           AccountNumbers: z
             .array(z.string())
-            .describe('Array of Account Numbers to get the balance'),
+            .describe("Array of Account Numbers to get the balance"),
           StartDate: z
             .string()
             .optional()
             .describe(
-              'Start Date for calculating Balance. This is always first of the Month. Default is this Month'
+              "Start Date for calculating Balance. This is always first of the Month. Default is this Month"
             ),
           EndDate: z
             .string()
             .optional()
             .describe(
-              'End Date for calculating Balance. This is always End of the Month. Default is this Month'
+              "End Date for calculating Balance. This is always End of the Month. Default is this Month"
             ),
           Subsidiary: z
             .string()
             .optional()
             .describe(
-              'Subsidiary name to be filtered. Remove consolidated from the name if it exists'
+              "Subsidiary name to be filtered. Remove consolidated from the name if it exists"
             ),
           IsSubConsolidated: z
             .boolean()
             .optional()
             .describe(
-              'Is Subsidiary consolidated filter, this is considered based on Consolidated word in the Subsidiary Name filter. Default is false'
+              "Is Subsidiary consolidated filter, this is considered based on Consolidated word in the Subsidiary Name filter. Default is false"
             ),
         },
-        outputSchema: {
-          balances: z
-            .array(
-              z.object({
-                AccountNumber: z.string().describe('Number of the Account'),
-                Name: z.string().optional().describe('Name of the Account'),
-                Balance: z.number().optional().describe('Account Balance'),
-              })
-            )
-            .describe('Array of account balance records.'),
-        },
+        outputSchema: this.outputSchema,
       },
       async (input: GetAccountBalanceInput) => {
         const startTime = Date.now();
 
         logger.error({
-          Module: 'getAccountBalance',
-          Message: 'Received input for getAccountBalance',
+          Module: "getAccountBalance",
+          Message: "Received input for getAccountBalance",
           ObjectMsg: { input },
         });
 
@@ -102,7 +114,7 @@ export class GetAccountBalance {
             !Array.isArray(input.AccountNumbers) ||
             input.AccountNumbers.filter(Boolean).length === 0
           ) {
-            throw new Error('Accounts cannot be Empty');
+            throw new Error("Accounts cannot be Empty");
           }
 
           const accNumbers = input.AccountNumbers.filter(Boolean).map((acc) => acc.toString());
@@ -111,8 +123,8 @@ export class GetAccountBalance {
           const accountsData = await this.getAccountsData();
 
           logger.info({
-            Module: 'getAccountBalance',
-            Message: 'Fetched all accounts data',
+            Module: "getAccountBalance",
+            Message: "Fetched all accounts data",
             ObjectMsg: { totalAccounts: accountsData.length },
           });
 
@@ -125,12 +137,12 @@ export class GetAccountBalance {
 
           if (totalAccountIds.length === 0) {
             logger.error({
-              Module: 'getAccountBalance',
-              Message: 'No matching accounts found for the provided AccountNumbers',
+              Module: "getAccountBalance",
+              Message: "No matching accounts found for the provided AccountNumbers",
               ObjectMsg: { input },
             });
 
-            throw new Error('Accounts not found');
+            throw new Error("Accounts not found");
           }
 
           // Get subsidiary filter if provided
@@ -150,12 +162,12 @@ export class GetAccountBalance {
           // Execute search restlet using the helper's searchRestlet but with direct parameter passing
           const searchRestletUrl = process.env.NETSUITE_SEARCH_REST_LET;
           if (!searchRestletUrl) {
-            throw new Error('NETSUITE_SEARCH_REST_LET environment variable not configured');
+            throw new Error("NETSUITE_SEARCH_REST_LET environment variable not configured");
           }
 
           const authToken = process.env.NETSUITE_ACCESS_TOKEN;
           if (!authToken) {
-            throw new Error('NETSUITE_ACCESS_TOKEN environment variable not configured');
+            throw new Error("NETSUITE_ACCESS_TOKEN environment variable not configured");
           }
 
           const resp = await request<{
@@ -163,12 +175,12 @@ export class GetAccountBalance {
             error?: unknown;
             data?: { count: number; items: unknown[][] };
           }>({
-            method: 'POST',
+            method: "POST",
             url: searchRestletUrl,
             data: searchFilter,
             headers: {
               Authorization: `Bearer ${authToken}`,
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
           });
 
@@ -179,8 +191,8 @@ export class GetAccountBalance {
           const rawItems = resp.data?.items || [];
 
           const balanceData = transformArray(rawItems as unknown as unknown[][], {
-            Id: { type: 'number' },
-            Balance: { type: 'number' },
+            Id: { type: "number" },
+            Balance: { type: "number" },
           }) as unknown as BalanceData[];
 
           // Calculate balance for each requested account
@@ -197,8 +209,8 @@ export class GetAccountBalance {
           const totalDuration = Date.now() - startTime;
 
           logger.info({
-            Module: 'getAccountBalance',
-            Message: 'Successfully retrieved account balances',
+            Module: "getAccountBalance",
+            Message: "Successfully retrieved account balances",
             ObjectMsg: {
               accountsProcessed: accNumbers.length,
               totalAccountIds: totalAccountIds.length,
@@ -209,7 +221,7 @@ export class GetAccountBalance {
           return {
             content: [
               {
-                type: 'text',
+                type: "text",
                 text: JSON.stringify(outputData, null, 2),
               },
             ],
@@ -219,8 +231,8 @@ export class GetAccountBalance {
           const totalDuration = Date.now() - startTime;
 
           logger.error({
-            Module: 'getAccountBalance',
-            Message: 'Error occurred during getAccountBalance execution',
+            Module: "getAccountBalance",
+            Message: "Error occurred during getAccountBalance execution",
             ObjectMsg: {
               error: error instanceof Error ? error.message : String(error),
               stack: error instanceof Error ? error.stack : undefined,
@@ -229,12 +241,12 @@ export class GetAccountBalance {
             },
           });
 
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+          const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 
           return {
             content: [
               {
-                type: 'text',
+                type: "text",
                 text: JSON.stringify(
                   {
                     error: errorMessage,
@@ -258,20 +270,20 @@ export class GetAccountBalance {
     const sql = `SELECT {Columns} FROM Account a`;
 
     const Columns = {
-      Id: { sql: 'a.Id', type: 'number' as const },
-      Name: { sql: 'a.accountSearchDisplayNameCopy', type: 'string' as const },
-      AccountNumber: { sql: 'a.acctNumber', type: 'string' as const },
-      ParentId: { sql: 'a.parent', type: 'number' as const },
+      Id: { sql: "a.Id", type: "number" as const },
+      Name: { sql: "a.accountSearchDisplayNameCopy", type: "string" as const },
+      AccountNumber: { sql: "a.acctNumber", type: "string" as const },
+      ParentId: { sql: "a.parent", type: "number" as const },
     };
 
-    const formattedSQL = NetSuiteHelper.formatSQL(sql, Columns, {}, '', {
-      Column: 'Name',
-      SortOrder: 'Asc',
+    const formattedSQL = NetSuiteHelper.formatSQL(sql, Columns, {}, "", {
+      Column: "Name",
+      SortOrder: "Asc",
     });
 
     logger.info({
-      Module: 'getAccountBalance',
-      Message: 'Fetching all accounts data using SuiteQL',
+      Module: "getAccountBalance",
+      Message: "Fetching all accounts data using SuiteQL",
       ObjectMsg: { formattedSQL },
     });
 
@@ -288,8 +300,8 @@ export class GetAccountBalance {
       const data = await NetSuiteHelper.executeSuiteQL(formattedSQL, dataOffset);
 
       logger.info({
-        Module: 'getAccountBalance',
-        Message: 'Fetched accounts data batch',
+        Module: "getAccountBalance",
+        Message: "Fetched accounts data batch",
         ObjectMsg: { offset: dataOffset, count: data.count, hasMore: data.hasMore },
       });
 
@@ -317,7 +329,7 @@ export class GetAccountBalance {
     data.forEach((item) => {
       if (item.ParentId) {
         const parentItem = idToItemMap.get(item.ParentId);
-        if (parentItem && typeof parentItem === 'object' && parentItem !== null) {
+        if (parentItem && typeof parentItem === "object" && parentItem !== null) {
           const parentObj = parentItem as Record<string, unknown>;
           item.ParentNumber = parentObj.AccountNumber;
         }
@@ -345,7 +357,7 @@ export class GetAccountBalance {
       result.push(...children);
 
       logger.info({
-        Module: 'getAccountBalance-findRecursively',
+        Module: "getAccountBalance-findRecursively",
         Message: `Finding children for account number: ${Numb}`,
         ObjectMsg: { currentNumb, childrenFound: children.length },
       });
@@ -356,7 +368,7 @@ export class GetAccountBalance {
     }
 
     logger.info({
-      Module: 'getAccountBalance',
+      Module: "getAccountBalance",
       Message: `Finding children for account number: ${Numb}`,
     });
 
@@ -372,56 +384,56 @@ export class GetAccountBalance {
     endDate?: string,
     subsidiaryIds?: number[]
   ): Record<string, unknown> {
-    const dateFormat = 'M/d/yyyy';
+    const dateFormat = "M/d/yyyy";
 
     // Use current month if dates not provided
-    const defaultStartDate = DateUtil.getStartOf(startDate, 'month');
-    const defaultEndDate = DateUtil.getEndOf(endDate, 'month');
+    const defaultStartDate = DateUtil.getStartOf(startDate, "month");
+    const defaultEndDate = DateUtil.getEndOf(endDate, "month");
 
     const formatStartDate = DateUtil.ISOToFormat(defaultStartDate, dateFormat);
     const formatEndDate = DateUtil.ISOToFormat(defaultEndDate, dateFormat);
 
     const searchObj = {
-      type: 'transaction',
+      type: "transaction",
       filters: [
         [
           [
-            ['accounttype', 'anyof', 'COGS', 'Expense', 'Income', 'OthIncome', 'OthExpense'],
-            'AND',
-            ['accountingperiod.startdate', 'onorafter', formatStartDate],
-            'AND',
-            ['accountingperiod.enddate', 'onorbefore', formatEndDate],
+            ["accounttype", "anyof", "COGS", "Expense", "Income", "OthIncome", "OthExpense"],
+            "AND",
+            ["accountingperiod.startdate", "onorafter", formatStartDate],
+            "AND",
+            ["accountingperiod.enddate", "onorbefore", formatEndDate],
           ],
-          'OR',
+          "OR",
           [
-            ['accounttype', 'noneof', 'Income', 'COGS', 'Expense', 'OthIncome', 'OthExpense'],
-            'AND',
-            ['accountingperiod.enddate', 'onorbefore', formatEndDate],
+            ["accounttype", "noneof", "Income", "COGS", "Expense", "OthIncome", "OthExpense"],
+            "AND",
+            ["accountingperiod.enddate", "onorbefore", formatEndDate],
           ],
         ],
-        'AND',
-        ['posting', 'is', 'T'],
-        'AND',
-        ['account', 'anyof', ...accountIds.map((id) => id.toString())],
+        "AND",
+        ["posting", "is", "T"],
+        "AND",
+        ["account", "anyof", ...accountIds.map((id) => id.toString())],
       ],
       columns: [
         {
-          name: 'internalid',
-          join: 'account',
-          summary: 'GROUP',
+          name: "internalid",
+          join: "account",
+          summary: "GROUP",
           txt: true,
         },
         {
-          name: 'amount',
-          summary: 'SUM',
+          name: "amount",
+          summary: "SUM",
         },
       ],
     };
 
     if (subsidiaryIds && subsidiaryIds.length > 0) {
-      searchObj.filters.push('AND', [
-        'subsidiary',
-        'anyof',
+      searchObj.filters.push("AND", [
+        "subsidiary",
+        "anyof",
         ...subsidiaryIds.map((id) => id.toString()),
       ]);
     }
@@ -433,30 +445,33 @@ export class GetAccountBalance {
     subsidiary?: string,
     IsSubConsolidated?: boolean
   ): Promise<number[]> {
-    if (!subsidiary || String(subsidiary).trim() === '') return [];
+    if (!subsidiary || String(subsidiary).trim() === "") return [];
 
-    const result = await NetSuiteHelper.searchRestlet('subsidiary', this.Columns, {}, [], {
-      Column: 'Id',
-      SortOrder: 'ASC',
+    const result = await NetSuiteHelper.searchRestlet("subsidiary", this.Columns, {}, [], {
+      Column: "Id",
+      SortOrder: "ASC",
     });
 
     logger.info({
-      Module: 'getAccountBalance',
-      Message: 'Fetched all subsidiaries data for filtering',
-      ObjectMsg: { subsidiary, IsSubConsolidated , subsidiariesCount:  (result as { items?: Record<string, unknown>[] }).items?.length ?? 0 },
+      Module: "getAccountBalance",
+      Message: "Fetched all subsidiaries data for filtering",
+      ObjectMsg: {
+        subsidiary,
+        IsSubConsolidated,
+        subsidiariesCount: (result as { items?: Record<string, unknown>[] }).items?.length ?? 0,
+      },
     });
 
     // Handle items response
     const itemsResult = result as { items?: Record<string, unknown>[] };
     let subsidiaries = itemsResult.items || [];
 
-
     const consolidatedSubs = subsidiaries.filter((sub) =>
       subsidiaries.some((item) => item.ParentId === sub.Id)
     );
 
     logger.info({
-      Module: 'getAccountBalance',
+      Module: "getAccountBalance",
       Message: `Finding subsidiaries matching: ${subsidiary} with IsSubConsolidated=${IsSubConsolidated}`,
       ObjectMsg: { consolidatedCount: consolidatedSubs.length },
     });
@@ -464,18 +479,20 @@ export class GetAccountBalance {
     let fuzzyResult = fuzzySearch(
       IsSubConsolidated === true ? consolidatedSubs : subsidiaries,
       subsidiary,
-      'Name',
+      "Name",
       true
     );
     // If Consolidated Subsidiary, but no fuzzy match. Search for general Subsidiaries
     if (fuzzyResult.length === 0 && IsSubConsolidated === true)
-      fuzzyResult = fuzzySearch(subsidiaries, subsidiary, 'Name', true);
+      fuzzyResult = fuzzySearch(subsidiaries, subsidiary, "Name", true);
 
-    if (fuzzyResult.length > 5){
-      throw new Error(`${fuzzyResult.length} subsidiaries matched your request. Please give more specifics.`);
+    if (fuzzyResult.length > 5) {
+      throw new Error(
+        `${fuzzyResult.length} subsidiaries matched your request. Please give more specifics.`
+      );
     }
     if (fuzzyResult.length > 1) {
-      const subs: string = fuzzyResult.map((f) => `"${f.Name}"`).join(', ');
+      const subs: string = fuzzyResult.map((f) => `"${f.Name}"`).join(", ");
       throw new Error(
         `${fuzzyResult.length} Subsidiaries ${subs} match your request, which subsidiary data are you looking for`
       );
@@ -483,8 +500,10 @@ export class GetAccountBalance {
     if (fuzzyResult.length === 0) throw new Error(`No Subsidiaries match your request`);
 
     const filterByParent = (subs: GenDictionary[], parentid: number | undefined): number[] =>
-      subs.filter((sub: GenDictionary) => sub.ParentId === parentid).map((sub: GenDictionary) => sub.Id as number);
-    
+      subs
+        .filter((sub: GenDictionary) => sub.ParentId === parentid)
+        .map((sub: GenDictionary) => sub.Id as number);
+
     const getChildren = (subs: GenDictionary[], parentid: number): number[] => {
       const children = filterByParent(subs, parentid);
       for (const child of children) {
@@ -493,7 +512,7 @@ export class GetAccountBalance {
       }
       return children;
     };
-    
+
     const selectedSubs: number[] =
       IsSubConsolidated === true ? getChildren(subsidiaries, fuzzyResult[0].Id as number) : [];
     selectedSubs.push(fuzzyResult[0].Id as number);

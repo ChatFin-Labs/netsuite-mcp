@@ -67,8 +67,7 @@ export class DateUtil {
     monthName: string;
   }> {
     const today = DateTime.utc();
-    const result: Array<{ month: number; year: number; monthName: string }> =
-      [];
+    const result: Array<{ month: number; year: number; monthName: string }> = [];
 
     for (let i = 0; i < 3; i++) {
       const m = today.plus({ months: -i });
