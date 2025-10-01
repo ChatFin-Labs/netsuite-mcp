@@ -1,18 +1,18 @@
-import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
-import { logger } from '../../utils/logger';
-import zodToJsonSchema from 'zod-to-json-schema';
+import { NetSuiteHelper, SuiteScriptColumns } from "../helper";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import { logger } from "../../utils/logger";
+import zodToJsonSchema from "zod-to-json-schema";
 
 interface GetSubsidiariesInput {
   CountOnly?: boolean;
   OrderBy?: {
     Column: string;
-    SortOrder?: 'DESC' | 'ASC' | '';
+    SortOrder?: "DESC" | "ASC" | "";
   };
   Filters?: Array<{
     Column: string;
-    Operator: '<' | '<=' | '>' | '>=' | '=' | '!=' | 'Like' | 'Not_Like';
+    Operator: "<" | "<=" | ">" | ">=" | "=" | "!=" | "Like" | "Not_Like";
     Value: string;
   }>;
   Limit?: number;
@@ -20,43 +20,43 @@ interface GetSubsidiariesInput {
 }
 
 export class GetSubsidiaries {
-  private readonly toolName = 'get-subsidiaries';
+  private readonly toolName = "get-subsidiaries";
 
   private readonly Columns: SuiteScriptColumns = {
-    Id: { name: 'internalid', type: 'id' },
-    Name: { name: 'namenohierarchy', type: 'string' },
-    ParentId: { name: 'parent', type: 'id' },
+    Id: { name: "internalid", type: "id" },
+    Name: { name: "namenohierarchy", type: "string" },
+    ParentId: { name: "parent", type: "id" },
   };
 
   private readonly outputSchema = {
     subsidiaries: z
       .array(
         z.object({
-          Id: z.string().optional().describe('Id of the Subsidiary'),
-          Name: z.string().optional().describe('Name of the Subsidiary'),
-          ParentId: z.string().optional().describe('Parent Id of the Subsidiary'),
+          Id: z.string().optional().describe("Id of the Subsidiary"),
+          Name: z.string().optional().describe("Name of the Subsidiary"),
+          ParentId: z.string().optional().describe("Parent Id of the Subsidiary"),
         })
       )
       .describe(
-        'Array of subsidiary records. Present when CountOnly=false. Each subsidiary represents subsidiary data.'
+        "Array of subsidiary records. Present when CountOnly=false. Each subsidiary represents subsidiary data."
       )
       .optional(),
   };
 
   private readonly samples: Array<string> = [
-    'Get me all Subsidiaries',
-    'what are the subsidiaries',
-    'Show me all the Subsidiaries with Payroll as name',
+    "Get me all Subsidiaries",
+    "what are the subsidiaries",
+    "Show me all the Subsidiaries with Payroll as name",
   ];
 
   public register(server: McpServer) {
     server.registerTool(
       this.toolName,
       {
-        title: 'Get Subsidiaries',
+        title: "Get Subsidiaries",
         description:
-          'Get List of all Subsidiaries' +
-          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          "Get List of all Subsidiaries" +
+          `\n${this.samples.length > 0 ? "Example Prompts:\n" + this.samples.join("\n") : ""}` +
           `\nOutput Schema of this tool: ${JSON.stringify(
             zodToJsonSchema(z.object(this.outputSchema))
           )}`,
@@ -68,9 +68,9 @@ export class GetSubsidiaries {
 
         try {
           // Use the searchRestlet helper method - equivalent to the old Implement method
-          const result = await NetSuiteHelper.searchRestlet('subsidiary', this.Columns, {}, [], {
-            Column: 'Id',
-            SortOrder: 'ASC',
+          const result = await NetSuiteHelper.searchRestlet("subsidiary", this.Columns, {}, [], {
+            Column: "Id",
+            SortOrder: "ASC",
           });
 
           // Handle items response
@@ -87,8 +87,8 @@ export class GetSubsidiaries {
           const totalDuration = Date.now() - startTime;
 
           logger.info({
-            Module: 'getSubsidiaries',
-            Message: 'Successfully retrieved subsidiaries',
+            Module: "getSubsidiaries",
+            Message: "Successfully retrieved subsidiaries",
             ObjectMsg: {
               itemsReturned: finalData.length,
               executionTime: totalDuration,
@@ -98,7 +98,7 @@ export class GetSubsidiaries {
           return {
             content: [
               {
-                type: 'text',
+                type: "text",
                 text: JSON.stringify(finalData, null, 2),
               },
             ],
@@ -108,8 +108,8 @@ export class GetSubsidiaries {
           const totalDuration = Date.now() - startTime;
 
           logger.error({
-            Module: 'getSubsidiaries',
-            Message: 'Error occurred during getSubsidiaries execution',
+            Module: "getSubsidiaries",
+            Message: "Error occurred during getSubsidiaries execution",
             ObjectMsg: {
               error: error instanceof Error ? error.message : String(error),
               stack: error instanceof Error ? error.stack : undefined,
@@ -118,12 +118,12 @@ export class GetSubsidiaries {
             },
           });
 
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+          const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 
           return {
             content: [
               {
-                type: 'text',
+                type: "text",
                 text: JSON.stringify(
                   {
                     error: errorMessage,

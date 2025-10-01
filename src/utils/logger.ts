@@ -1,15 +1,15 @@
-import lodash from 'lodash';
-import { GenDictionary, ILog } from '../Models/General';
-import winston from 'winston';
-import { DateUtil } from './date';
-import { localstorage } from './localstorage';
-import path from 'path';
-import fs from 'fs';
+import lodash from "lodash";
+import { GenDictionary, ILog } from "../Models/General";
+import winston from "winston";
+import { DateUtil } from "./date";
+import { localstorage } from "./localstorage";
+import path from "path";
+import fs from "fs";
 
 winston.addColors({
-  error: 'red',
-  info: 'white',
-  debug: 'green',
+  error: "red",
+  info: "white",
+  debug: "green",
 });
 
 // Helper function to parse size strings like "10m", "5mb", etc.
@@ -21,14 +21,14 @@ function parseSize(sizeStr: string): number {
   const size = parseFloat(num);
 
   switch (unit) {
-    case 'k':
-    case 'kb':
+    case "k":
+    case "kb":
       return size * 1024;
-    case 'm':
-    case 'mb':
+    case "m":
+    case "mb":
       return size * 1024 * 1024;
-    case 'g':
-    case 'gb':
+    case "g":
+    case "gb":
       return size * 1024 * 1024 * 1024;
     default:
       return size;
@@ -40,10 +40,10 @@ let winstonLogger: winston.Logger | null = null;
 
 function getLogger(): winston.Logger {
   if (!winstonLogger) {
-    const logLevel = process.env.LOG_LEVEL || 'info';
+    const logLevel = process.env.LOG_LEVEL || "info";
 
     // Ensure logs directory exists
-    const logDir = path.join(process.cwd(), 'logs');
+    const logDir = path.join(process.cwd(), "logs");
     if (!fs.existsSync(logDir)) {
       fs.mkdirSync(logDir, { recursive: true });
     }
@@ -51,8 +51,8 @@ function getLogger(): winston.Logger {
     const transports: winston.transport[] = [];
 
     // Log to file when LOG_TO_FILE is true, otherwise log to console
-    if ((process.env.LOG_TO_FILE ?? '').toString() === 'true') {
-      const logFilePath = path.join(logDir, 'app.log');
+    if ((process.env.LOG_TO_FILE ?? "").toString() === "true") {
+      const logFilePath = path.join(logDir, "app.log");
       transports.push(
         new winston.transports.File({
           filename: logFilePath,
@@ -83,10 +83,10 @@ function getLogger(): winston.Logger {
     });
 
     // Test log to verify file logging is working
-    if ((process.env.LOG_TO_FILE ?? '') === 'true') {
-      winstonLogger.info('Logger initialized - file logging enabled', {
-        App: 'ChatFin-NetSuite-MCP',
-        Module: 'logger-init',
+    if ((process.env.LOG_TO_FILE ?? "") === "true") {
+      winstonLogger.info("Logger initialized - file logging enabled", {
+        App: "ChatFin-NetSuite-MCP",
+        Module: "logger-init",
         timestamp: new Date().toISOString(),
         logLevel: logLevel,
         logToFile: process.env.LOG_TO_FILE,
@@ -97,26 +97,26 @@ function getLogger(): winston.Logger {
   return winstonLogger;
 }
 
-function logAny(level: 'info' | 'error' | 'debug', obj: ILog): void {
+function logAny(level: "info" | "error" | "debug", obj: ILog): void {
   const logObj = lodash.cloneDeep(obj) as unknown as GenDictionary;
-  logObj.App = logObj.App ?? 'ChatFin-NetSuite-MCP';
+  logObj.App = logObj.App ?? "ChatFin-NetSuite-MCP";
   logObj.t = logObj.t ?? DateUtil.getISO();
-  const message = logObj.Message || '';
+  const message = logObj.Message || "";
   delete logObj.Message;
-  if (!logObj.CorrelationId) logObj.CorrelationId = localstorage.get<string>('CorrelationId');
+  if (!logObj.CorrelationId) logObj.CorrelationId = localstorage.get<string>("CorrelationId");
   getLogger().log(level, { message, ...logObj });
 }
 
 function info(obj: ILog): void {
-  logAny('info', obj);
+  logAny("info", obj);
 }
 
 function error(obj: ILog): void {
-  logAny('error', obj);
+  logAny("error", obj);
 }
 
 function debug(obj: ILog): void {
-  logAny('debug', obj);
+  logAny("debug", obj);
 }
 
 export const logger = {

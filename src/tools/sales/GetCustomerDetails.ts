@@ -1,24 +1,24 @@
-import { NetSuiteHelper } from '../helper';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
-import { logger } from '../../utils/logger';
-import { fuzzySearch } from '../../utils/fuzzySearch';
-import zodToJsonSchema from 'zod-to-json-schema';
+import { NetSuiteHelper } from "../helper";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import { logger } from "../../utils/logger";
+import { fuzzySearch } from "../../utils/fuzzySearch";
+import zodToJsonSchema from "zod-to-json-schema";
 
 interface CustomerDetailsInput {
   searchValue: string;
 }
 
 export class GetCustomerDetails {
-  private readonly toolName = 'get-customer-details';
+  private readonly toolName = "get-customer-details";
 
   private readonly outputSchema = {
     customer: z
       .object({
-        Id: z.number().describe('ID of the Customer'),
-        Name: z.string().describe('Name of the Customer'),
+        Id: z.number().describe("ID of the Customer"),
+        Name: z.string().describe("Name of the Customer"),
       })
-      .describe('The matched customer details'),
+      .describe("The matched customer details"),
   };
 
   private readonly samples: Array<string> = [];
@@ -27,15 +27,15 @@ export class GetCustomerDetails {
     server.registerTool(
       this.toolName,
       {
-        title: 'Get Customer Details',
+        title: "Get Customer Details",
         description:
-          'Find a specific customer by name or ID with fuzzy search capabilities' +
-          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          "Find a specific customer by name or ID with fuzzy search capabilities" +
+          `\n${this.samples.length > 0 ? "Example Prompts:\n" + this.samples.join("\n") : ""}` +
           `\nOutput Schema of this tool: ${JSON.stringify(
             zodToJsonSchema(z.object(this.outputSchema))
           )}`,
         inputSchema: {
-          searchValue: z.string().describe('Customer name or ID to search for'),
+          searchValue: z.string().describe("Customer name or ID to search for"),
         },
         outputSchema: this.outputSchema,
       },
@@ -43,10 +43,10 @@ export class GetCustomerDetails {
         const startTime = Date.now();
 
         try {
-          if (!input.searchValue || input.searchValue.trim() === '') {
-            const errorMessage = 'searchValue cannot be empty.';
+          if (!input.searchValue || input.searchValue.trim() === "") {
+            const errorMessage = "searchValue cannot be empty.";
             logger.info({
-              Module: 'customerDetails',
+              Module: "customerDetails",
               Message: errorMessage,
               ObjectMsg: {
                 searchValue: input.searchValue,
@@ -57,7 +57,7 @@ export class GetCustomerDetails {
             return {
               content: [
                 {
-                  type: 'text',
+                  type: "text",
                   text: JSON.stringify(
                     {
                       error: errorMessage,
@@ -76,12 +76,12 @@ export class GetCustomerDetails {
           const { searchValue } = input;
 
           // Prepare filters for searching by name and potentially by ID
-          const filtersList = [{ Column: 'Name', Operator: 'Like' as const, Value: searchValue }];
+          const filtersList = [{ Column: "Name", Operator: "Like" as const, Value: searchValue }];
 
           if (!isNaN(Number(searchValue))) {
             filtersList.push({
-              Column: 'Id',
-              Operator: 'Like' as const,
+              Column: "Id",
+              Operator: "Like" as const,
               Value: searchValue,
             });
           }
@@ -94,18 +94,18 @@ export class GetCustomerDetails {
 
             // Use searchRestlet to get customers - we need the basic columns for matching
             const columns = {
-              Id: { name: 'internalid', type: 'id' as const },
-              Name: { name: 'entityid', type: 'string' as const },
+              Id: { name: "internalid", type: "id" as const },
+              Name: { name: "entityid", type: "string" as const },
             };
 
             const result = await NetSuiteHelper.searchRestlet(
-              'customer',
+              "customer",
               columns,
               searchParams,
               [],
               {
-                Column: 'Id',
-                SortOrder: 'ASC',
+                Column: "Id",
+                SortOrder: "ASC",
               }
             );
 
@@ -120,9 +120,9 @@ export class GetCustomerDetails {
           );
 
           // Apply fuzzy search
-          const fuzzyName = fuzzySearch(uniqueResults, searchValue, 'Name', true);
+          const fuzzyName = fuzzySearch(uniqueResults, searchValue, "Name", true);
           const fuzzyId = !isNaN(Number(searchValue))
-            ? fuzzySearch(uniqueResults, searchValue, 'Id', true)
+            ? fuzzySearch(uniqueResults, searchValue, "Id", true)
             : [];
 
           const fuzzyCombined = [...fuzzyName, ...fuzzyId];
@@ -141,9 +141,9 @@ export class GetCustomerDetails {
 
           // Handle different result scenarios
           if (result.length === 0) {
-            const errorMessage = 'No customer record matches your input.';
+            const errorMessage = "No customer record matches your input.";
             logger.info({
-              Module: 'customerDetails',
+              Module: "customerDetails",
               Message: errorMessage,
               ObjectMsg: {
                 searchValue,
@@ -154,7 +154,7 @@ export class GetCustomerDetails {
             return {
               content: [
                 {
-                  type: 'text',
+                  type: "text",
                   text: JSON.stringify(
                     {
                       error: errorMessage,
@@ -171,7 +171,7 @@ export class GetCustomerDetails {
           } else if (result.length > 5) {
             const errorMessage = `${result.length} customer records match your request. Please give more specifics.`;
             logger.info({
-              Module: 'customerDetails',
+              Module: "customerDetails",
               Message: errorMessage,
               ObjectMsg: {
                 searchValue,
@@ -183,7 +183,7 @@ export class GetCustomerDetails {
             return {
               content: [
                 {
-                  type: 'text',
+                  type: "text",
                   text: JSON.stringify(
                     {
                       error: errorMessage,
@@ -199,11 +199,11 @@ export class GetCustomerDetails {
               isError: true,
             };
           } else if (result.length > 1) {
-            const names = result.map((r) => `"${r.Name}"`).join(', ');
+            const names = result.map((r) => `"${r.Name}"`).join(", ");
             const errorMessage = `${result.length} customers ${names} match your request. Which one are you looking for?`;
 
             logger.info({
-              Module: 'customerDetails',
+              Module: "customerDetails",
               Message: errorMessage,
               ObjectMsg: {
                 searchValue,
@@ -216,7 +216,7 @@ export class GetCustomerDetails {
             return {
               content: [
                 {
-                  type: 'text',
+                  type: "text",
                   text: JSON.stringify(
                     {
                       error: errorMessage,
@@ -243,8 +243,8 @@ export class GetCustomerDetails {
           };
 
           logger.info({
-            Module: 'customerDetails',
-            Message: 'Successfully found customer',
+            Module: "customerDetails",
+            Message: "Successfully found customer",
             ObjectMsg: {
               searchValue,
               foundCustomer: customerResult.customer,
@@ -255,7 +255,7 @@ export class GetCustomerDetails {
           return {
             content: [
               {
-                type: 'text',
+                type: "text",
                 text: JSON.stringify(customerResult, null, 2),
               },
             ],
@@ -265,8 +265,8 @@ export class GetCustomerDetails {
           const totalDuration = Date.now() - startTime;
 
           logger.error({
-            Module: 'customerDetails',
-            Message: 'Error occurred during customerDetails execution',
+            Module: "customerDetails",
+            Message: "Error occurred during customerDetails execution",
             ObjectMsg: {
               error: error instanceof Error ? error.message : String(error),
               stack: error instanceof Error ? error.stack : undefined,
@@ -275,16 +275,16 @@ export class GetCustomerDetails {
             },
           });
 
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+          const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 
           return {
             content: [
               {
-                type: 'text',
+                type: "text",
                 text: JSON.stringify(
                   {
                     error: errorMessage,
-                    message: 'Failed to search for customer details',
+                    message: "Failed to search for customer details",
                     timestamp: new Date().toISOString(),
                   },
                   null,

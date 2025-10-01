@@ -1,18 +1,18 @@
-import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
-import { logger } from '../../utils/logger';
-import zodToJsonSchema from 'zod-to-json-schema';
+import { NetSuiteHelper, SuiteScriptColumns } from "../helper";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import { logger } from "../../utils/logger";
+import zodToJsonSchema from "zod-to-json-schema";
 
 interface GetItemsInput {
   CountOnly?: boolean;
   OrderBy?: {
     Column: string;
-    SortOrder?: 'DESC' | 'ASC' | '';
+    SortOrder?: "DESC" | "ASC" | "";
   };
   Filters?: Array<{
     Column: string;
-    Operator: '<' | '<=' | '>' | '>=' | '=' | '!=' | 'Like' | 'Not_Like';
+    Operator: "<" | "<=" | ">" | ">=" | "=" | "!=" | "Like" | "Not_Like";
     Value: string;
   }>;
   Limit?: number;
@@ -20,37 +20,37 @@ interface GetItemsInput {
 }
 
 export class GetItems {
-  private readonly toolName = 'get-items';
+  private readonly toolName = "get-items";
 
   private readonly Columns: SuiteScriptColumns = {
-    InternalId: { name: 'internalid', type: 'id' },
-    Name: { name: 'itemid', type: 'string' },
-    DisplayName: { name: 'displayname', type: 'string' },
-    Description: { name: 'salesdescription', type: 'string' },
-    Type: { name: 'type', type: 'string' },
-    BasePrice: { name: 'baseprice', type: 'string' },
+    InternalId: { name: "internalid", type: "id" },
+    Name: { name: "itemid", type: "string" },
+    DisplayName: { name: "displayname", type: "string" },
+    Description: { name: "salesdescription", type: "string" },
+    Type: { name: "type", type: "string" },
+    BasePrice: { name: "baseprice", type: "string" },
   };
   private readonly outputSchema = {
     items: z
       .array(
         z.object({
-          InternalId: z.string().optional().describe('Id of the Item'),
-          Name: z.string().optional().describe('Name of the Item'),
-          DisplayName: z.string().optional().describe('Display name of the Item'),
-          Description: z.string().optional().describe('Description about the item'),
-          Type: z.string().optional().describe('Type of the item'),
-          BasePrice: z.string().optional().describe('Base price of the item'),
+          InternalId: z.string().optional().describe("Id of the Item"),
+          Name: z.string().optional().describe("Name of the Item"),
+          DisplayName: z.string().optional().describe("Display name of the Item"),
+          Description: z.string().optional().describe("Description about the item"),
+          Type: z.string().optional().describe("Type of the item"),
+          BasePrice: z.string().optional().describe("Base price of the item"),
         })
       )
       .describe(
-        'Array of item records. Present when CountOnly=false. Each item represents sellable item data.'
+        "Array of item records. Present when CountOnly=false. Each item represents sellable item data."
       )
       .optional(),
     Count: z
       .number()
       .int()
       .positive()
-      .describe('Total number of item records. Present when CountOnly=true.')
+      .describe("Total number of item records. Present when CountOnly=true.")
       .optional(),
   };
 
@@ -60,10 +60,10 @@ export class GetItems {
     server.registerTool(
       this.toolName,
       {
-        title: 'Get Items',
+        title: "Get Items",
         description:
-          'Get List of all sellable Items with details' +
-          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          "Get List of all sellable Items with details" +
+          `\n${this.samples.length > 0 ? "Example Prompts:\n" + this.samples.join("\n") : ""}` +
           `\nOutput Schema of this tool: ${JSON.stringify(
             zodToJsonSchema(z.object(this.outputSchema))
           )}`,
@@ -75,9 +75,9 @@ export class GetItems {
 
         try {
           // Use the searchRestlet helper method - equivalent to the old Implement method
-          const result = await NetSuiteHelper.searchRestlet('item', this.Columns, input, [], {
-            Column: 'Id',
-            SortOrder: 'ASC',
+          const result = await NetSuiteHelper.searchRestlet("item", this.Columns, input, [], {
+            Column: "Id",
+            SortOrder: "ASC",
           });
 
           // Handle count-only response
@@ -85,8 +85,8 @@ export class GetItems {
             const countResult = result as { Count: number };
 
             logger.info({
-              Module: 'getItems',
-              Message: 'Successfully retrieved items count',
+              Module: "getItems",
+              Message: "Successfully retrieved items count",
               ObjectMsg: {
                 count: countResult.Count,
                 executionTime: Date.now() - startTime,
@@ -96,7 +96,7 @@ export class GetItems {
             return {
               content: [
                 {
-                  type: 'text',
+                  type: "text",
                   text: JSON.stringify(countResult, null, 2),
                 },
               ],
@@ -117,8 +117,8 @@ export class GetItems {
           const totalDuration = Date.now() - startTime;
 
           logger.info({
-            Module: 'getItems',
-            Message: 'Successfully retrieved items',
+            Module: "getItems",
+            Message: "Successfully retrieved items",
             ObjectMsg: {
               itemsReturned: finalData.length,
               executionTime: totalDuration,
@@ -128,7 +128,7 @@ export class GetItems {
           return {
             content: [
               {
-                type: 'text',
+                type: "text",
                 text: JSON.stringify(finalData, null, 2),
               },
             ],
@@ -138,8 +138,8 @@ export class GetItems {
           const totalDuration = Date.now() - startTime;
 
           logger.error({
-            Module: 'getItems',
-            Message: 'Error occurred during getItems execution',
+            Module: "getItems",
+            Message: "Error occurred during getItems execution",
             ObjectMsg: {
               error: error instanceof Error ? error.message : String(error),
               stack: error instanceof Error ? error.stack : undefined,
@@ -148,16 +148,16 @@ export class GetItems {
             },
           });
 
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+          const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 
           return {
             content: [
               {
-                type: 'text',
+                type: "text",
                 text: JSON.stringify(
                   {
                     error: errorMessage,
-                    message: 'Failed to get items from NetSuite',
+                    message: "Failed to get items from NetSuite",
                     timestamp: new Date().toISOString(),
                   },
                   null,

@@ -1,18 +1,18 @@
-import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
-import { logger } from '../../utils/logger';
-import zodToJsonSchema from 'zod-to-json-schema';
+import { NetSuiteHelper, SuiteScriptColumns } from "../helper";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import { logger } from "../../utils/logger";
+import zodToJsonSchema from "zod-to-json-schema";
 
 interface GetClassInput {
   CountOnly?: boolean;
   OrderBy?: {
     Column: string;
-    SortOrder?: 'DESC' | 'ASC' | '';
+    SortOrder?: "DESC" | "ASC" | "";
   };
   Filters?: Array<{
     Column: string;
-    Operator: '<' | '<=' | '>' | '>=' | '=' | '!=' | 'Like' | 'Not_Like';
+    Operator: "<" | "<=" | ">" | ">=" | "=" | "!=" | "Like" | "Not_Like";
     Value: string;
   }>;
   Limit?: number;
@@ -20,30 +20,30 @@ interface GetClassInput {
 }
 
 export class GetClasses {
-  private readonly toolName = 'get-classes';
+  private readonly toolName = "get-classes";
 
   private readonly Columns: SuiteScriptColumns = {
-    Id: { name: 'internalid', type: 'id' },
-    Name: { name: 'name', type: 'string' },
+    Id: { name: "internalid", type: "id" },
+    Name: { name: "name", type: "string" },
   };
 
   private readonly outputSchema = {
     classes: z
       .array(
         z.object({
-          Id: z.string().optional().describe('Id of the Class'),
-          Name: z.string().optional().describe('Name of the Class'),
+          Id: z.string().optional().describe("Id of the Class"),
+          Name: z.string().optional().describe("Name of the Class"),
         })
       )
       .describe(
-        'Array of class records. Present when CountOnly=false. Each class represents classification data.'
+        "Array of class records. Present when CountOnly=false. Each class represents classification data."
       )
       .optional(),
     Count: z
       .number()
       .int()
       .positive()
-      .describe('Total number of class records. Present when CountOnly=true.')
+      .describe("Total number of class records. Present when CountOnly=true.")
       .optional(),
   };
 
@@ -53,10 +53,10 @@ export class GetClasses {
     server.registerTool(
       this.toolName,
       {
-        title: 'Get Classes',
+        title: "Get Classes",
         description:
-          'Get List of all Classes (Classifications)' +
-          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          "Get List of all Classes (Classifications)" +
+          `\n${this.samples.length > 0 ? "Example Prompts:\n" + this.samples.join("\n") : ""}` +
           `\nOutput Schema of this tool: ${JSON.stringify(
             zodToJsonSchema(z.object(this.outputSchema))
           )}`,
@@ -69,13 +69,13 @@ export class GetClasses {
         try {
           // Use the searchRestlet helper method - equivalent to the old Implement method
           const result = await NetSuiteHelper.searchRestlet(
-            'classification',
+            "classification",
             this.Columns,
             input,
             [],
             {
-              Column: 'Id',
-              SortOrder: 'ASC',
+              Column: "Id",
+              SortOrder: "ASC",
             }
           );
 
@@ -84,8 +84,8 @@ export class GetClasses {
             const countResult = result as { Count: number };
 
             logger.info({
-              Module: 'getClass',
-              Message: 'Successfully retrieved class count',
+              Module: "getClass",
+              Message: "Successfully retrieved class count",
               ObjectMsg: {
                 count: countResult.Count,
                 executionTime: Date.now() - startTime,
@@ -95,7 +95,7 @@ export class GetClasses {
             return {
               content: [
                 {
-                  type: 'text',
+                  type: "text",
                   text: JSON.stringify(countResult, null, 2),
                 },
               ],
@@ -116,8 +116,8 @@ export class GetClasses {
           const totalDuration = Date.now() - startTime;
 
           logger.info({
-            Module: 'getClass',
-            Message: 'Successfully retrieved classes',
+            Module: "getClass",
+            Message: "Successfully retrieved classes",
             ObjectMsg: {
               itemsReturned: finalData.length,
               executionTime: totalDuration,
@@ -127,7 +127,7 @@ export class GetClasses {
           return {
             content: [
               {
-                type: 'text',
+                type: "text",
                 text: JSON.stringify(finalData, null, 2),
               },
             ],
@@ -137,8 +137,8 @@ export class GetClasses {
           const totalDuration = Date.now() - startTime;
 
           logger.error({
-            Module: 'getClass',
-            Message: 'Error occurred during getClass execution',
+            Module: "getClass",
+            Message: "Error occurred during getClass execution",
             ObjectMsg: {
               error: error instanceof Error ? error.message : String(error),
               stack: error instanceof Error ? error.stack : undefined,
@@ -147,16 +147,16 @@ export class GetClasses {
             },
           });
 
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+          const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 
           return {
             content: [
               {
-                type: 'text',
+                type: "text",
                 text: JSON.stringify(
                   {
                     error: errorMessage,
-                    message: 'Failed to get classes from NetSuite',
+                    message: "Failed to get classes from NetSuite",
                     timestamp: new Date().toISOString(),
                   },
                   null,

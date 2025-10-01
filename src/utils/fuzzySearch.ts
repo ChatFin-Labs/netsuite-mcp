@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
-const Fuse = require('fuse.js');
-import lodash from 'lodash';
-import { GenDictionary } from '../Models/General';
+const Fuse = require("fuse.js");
+import lodash from "lodash";
+import { GenDictionary } from "../Models/General";
 
 export function fuzzySearch(
   arrData: GenDictionary[],
@@ -20,7 +20,7 @@ export function fuzzySearch(
 
   const data = lodash.cloneDeep(arrData);
   for (const obj of data) {
-    if (typeof obj === 'object' && property) obj[property] = String(obj[property]);
+    if (typeof obj === "object" && property) obj[property] = String(obj[property]);
   }
   const fuse = new Fuse(data, options);
   const result = fuse.search(String(searchString));

@@ -1,4 +1,4 @@
-import { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
 export interface AxiosRequestConfigWithMetadata<T = unknown> extends InternalAxiosRequestConfig<T> {
   metadata?: {

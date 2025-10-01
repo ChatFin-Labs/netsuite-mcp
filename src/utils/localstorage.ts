@@ -1,14 +1,14 @@
-import httpContext from 'express-http-context';
-import { DateUtil } from './date';
+import httpContext from "express-http-context";
+import { DateUtil } from "./date";
 
 const LocalStorageKeysAndDefaults: {
   CorrelationId: () => string;
   RequestStartTime: () => number;
   RequestRawBody: () => string;
 } = {
-  CorrelationId: () => '',
+  CorrelationId: () => "",
   RequestStartTime: () => DateUtil.getTimestamp(),
-  RequestRawBody: () => '',
+  RequestRawBody: () => "",
 };
 
 function set<T>(key: keyof typeof LocalStorageKeysAndDefaults, value: T): void {

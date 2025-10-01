@@ -1,4 +1,4 @@
-import { DateTime, DateTimeUnit } from 'luxon';
+import { DateTime, DateTimeUnit } from "luxon";
 
 export class DateUtil {
   static getUTCDate(): DateTime {
@@ -22,15 +22,15 @@ export class DateUtil {
   }
 
   static getISO(): string {
-    return DateUtil.getUTCDate().toISO() ?? '';
+    return DateUtil.getUTCDate().toISO() ?? "";
   }
 
   static getStartOf(date?: string, unit?: DateTimeUnit): string {
     date = date ? date : DateUtil.getISO();
     return (
       DateTime.fromISO(date)
-        .startOf(unit ?? 'month')
-        .toISO() ?? ''
+        .startOf(unit ?? "month")
+        .toISO() ?? ""
     );
   }
 
@@ -38,8 +38,8 @@ export class DateUtil {
     date = date ? date : DateUtil.getISO();
     return (
       DateTime.fromISO(date)
-        .endOf(unit ?? 'month')
-        .toISO() ?? ''
+        .endOf(unit ?? "month")
+        .toISO() ?? ""
     );
   }
 
@@ -48,7 +48,7 @@ export class DateUtil {
   }
 
   static FormatToISO(date: string, format: string): string {
-    return DateTime.fromFormat(date, format, { zone: 'UTC' }).toISO() ?? '';
+    return DateTime.fromFormat(date, format, { zone: "UTC" }).toISO() ?? "";
   }
 
   static getFutureTime(spanMins: number): number {
@@ -56,10 +56,10 @@ export class DateUtil {
   }
 
   static getMonthName(month: number): string {
-    return DateTime.utc().set({ month }).toFormat('LLL');
+    return DateTime.utc().set({ month }).toFormat("LLL");
   }
   static getFormattedEndOfMonth(isoDate: string, format: string): string {
-    return this.ISOToFormat(this.getEndOf(isoDate, 'month'), format);
+    return this.ISOToFormat(this.getEndOf(isoDate, "month"), format);
   }
   static getLastThreeMonths(): Array<{
     month: number;

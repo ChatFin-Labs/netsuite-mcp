@@ -1,18 +1,18 @@
-import { NetSuiteHelper, SuiteScriptColumns } from '../helper';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
-import { logger } from '../../utils/logger';
-import zodToJsonSchema from 'zod-to-json-schema';
+import { NetSuiteHelper, SuiteScriptColumns } from "../helper";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import { logger } from "../../utils/logger";
+import zodToJsonSchema from "zod-to-json-schema";
 
 interface GetCustomersInput {
   CountOnly?: boolean;
   OrderBy?: {
     Column: string;
-    SortOrder?: 'DESC' | 'ASC' | '';
+    SortOrder?: "DESC" | "ASC" | "";
   };
   Filters?: Array<{
     Column: string;
-    Operator: '<' | '<=' | '>' | '>=' | '=' | '!=' | 'Like' | 'Not_Like';
+    Operator: "<" | "<=" | ">" | ">=" | "=" | "!=" | "Like" | "Not_Like";
     Value: string;
   }>;
   Limit?: number;
@@ -20,42 +20,42 @@ interface GetCustomersInput {
 }
 
 export class GetCustomers {
-  private readonly toolName = 'get-customers';
+  private readonly toolName = "get-customers";
 
   private readonly Columns: SuiteScriptColumns = {
-    Id: { name: 'internalid', type: 'id' },
-    Name: { name: 'entityid', type: 'string' },
-    Email: { name: 'email', type: 'string' },
-    Phone: { name: 'phone', type: 'string' },
-    OfficePhone: { name: 'altphone', type: 'string' },
-    Fax: { name: 'fax', type: 'string' },
-    PrimaryContact: { name: 'contact', type: 'string' },
-    AltEmail: { name: 'altemail', type: 'string' },
+    Id: { name: "internalid", type: "id" },
+    Name: { name: "entityid", type: "string" },
+    Email: { name: "email", type: "string" },
+    Phone: { name: "phone", type: "string" },
+    OfficePhone: { name: "altphone", type: "string" },
+    Fax: { name: "fax", type: "string" },
+    PrimaryContact: { name: "contact", type: "string" },
+    AltEmail: { name: "altemail", type: "string" },
   };
 
   private readonly outputSchema = {
     customers: z
       .array(
         z.object({
-          Id: z.string().optional().describe('Id of the Customer'),
-          Name: z.string().optional().describe('Name of the Customer'),
-          Email: z.string().optional().describe('Email of the Customer'),
-          Phone: z.string().optional().describe('Phone number of the Customer'),
-          OfficePhone: z.string().optional().describe('Alternate Phone number of the Customer'),
-          Fax: z.string().optional().describe('Fax of the Customer'),
-          PrimaryContact: z.string().optional().describe('Primary Contact of the Customer'),
-          AltEmail: z.string().optional().describe('Alternate Email of the Customer'),
+          Id: z.string().optional().describe("Id of the Customer"),
+          Name: z.string().optional().describe("Name of the Customer"),
+          Email: z.string().optional().describe("Email of the Customer"),
+          Phone: z.string().optional().describe("Phone number of the Customer"),
+          OfficePhone: z.string().optional().describe("Alternate Phone number of the Customer"),
+          Fax: z.string().optional().describe("Fax of the Customer"),
+          PrimaryContact: z.string().optional().describe("Primary Contact of the Customer"),
+          AltEmail: z.string().optional().describe("Alternate Email of the Customer"),
         })
       )
       .describe(
-        'Array of customer records. Present when CountOnly=false. Each customer represents customer data with contact information.'
+        "Array of customer records. Present when CountOnly=false. Each customer represents customer data with contact information."
       )
       .optional(),
     Count: z
       .number()
       .int()
       .positive()
-      .describe('Total number of customer records. Present when CountOnly=true.')
+      .describe("Total number of customer records. Present when CountOnly=true.")
       .optional(),
   };
 
@@ -65,10 +65,10 @@ export class GetCustomers {
     server.registerTool(
       this.toolName,
       {
-        title: 'Get Customers',
+        title: "Get Customers",
         description:
-          'Get List of all Customers with contact information' +
-          `\n${this.samples.length > 0 ? 'Example Prompts:\n' + this.samples.join('\n') : ''}` +
+          "Get List of all Customers with contact information" +
+          `\n${this.samples.length > 0 ? "Example Prompts:\n" + this.samples.join("\n") : ""}` +
           `\nOutput Schema of this tool: ${JSON.stringify(
             zodToJsonSchema(z.object(this.outputSchema))
           )}`,
@@ -80,9 +80,9 @@ export class GetCustomers {
 
         try {
           // Use the searchRestlet helper method - equivalent to the old Implement method
-          const result = await NetSuiteHelper.searchRestlet('customer', this.Columns, input, [], {
-            Column: 'Id',
-            SortOrder: 'ASC',
+          const result = await NetSuiteHelper.searchRestlet("customer", this.Columns, input, [], {
+            Column: "Id",
+            SortOrder: "ASC",
           });
 
           // Handle count-only response
@@ -90,8 +90,8 @@ export class GetCustomers {
             const countResult = result as { Count: number };
 
             logger.info({
-              Module: 'getCustomers',
-              Message: 'Successfully retrieved customer count',
+              Module: "getCustomers",
+              Message: "Successfully retrieved customer count",
               ObjectMsg: {
                 count: countResult.Count,
                 executionTime: Date.now() - startTime,
@@ -101,7 +101,7 @@ export class GetCustomers {
             return {
               content: [
                 {
-                  type: 'text',
+                  type: "text",
                   text: JSON.stringify(countResult, null, 2),
                 },
               ],
@@ -122,8 +122,8 @@ export class GetCustomers {
           const totalDuration = Date.now() - startTime;
 
           logger.info({
-            Module: 'getCustomers',
-            Message: 'Successfully retrieved customers',
+            Module: "getCustomers",
+            Message: "Successfully retrieved customers",
             ObjectMsg: {
               itemsReturned: finalData.length,
               executionTime: totalDuration,
@@ -133,7 +133,7 @@ export class GetCustomers {
           return {
             content: [
               {
-                type: 'text',
+                type: "text",
                 text: JSON.stringify(finalData, null, 2),
               },
             ],
@@ -143,8 +143,8 @@ export class GetCustomers {
           const totalDuration = Date.now() - startTime;
 
           logger.error({
-            Module: 'getCustomers',
-            Message: 'Error occurred during getCustomers execution',
+            Module: "getCustomers",
+            Message: "Error occurred during getCustomers execution",
             ObjectMsg: {
               error: error instanceof Error ? error.message : String(error),
               stack: error instanceof Error ? error.stack : undefined,
@@ -153,16 +153,16 @@ export class GetCustomers {
             },
           });
 
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+          const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 
           return {
             content: [
               {
-                type: 'text',
+                type: "text",
                 text: JSON.stringify(
                   {
                     error: errorMessage,
-                    message: 'Failed to get customers from NetSuite',
+                    message: "Failed to get customers from NetSuite",
                     timestamp: new Date().toISOString(),
                   },
                   null,

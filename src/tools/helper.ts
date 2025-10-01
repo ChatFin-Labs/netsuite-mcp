@@ -1,23 +1,23 @@
-import lodash from 'lodash';
-import { CFError } from '../Models/CFError';
-import { Dictionary, GenDictionary } from '../Models/General';
-import { DateUtil } from '../utils/date';
-import z from 'zod';
-import { logger } from '../utils/logger';
-import { transformArray } from '../utils/transform';
-import { netsuiteRequest, request } from '../utils/http';
+import lodash from "lodash";
+import { CFError } from "../Models/CFError";
+import { Dictionary, GenDictionary } from "../Models/General";
+import { DateUtil } from "../utils/date";
+import z from "zod";
+import { logger } from "../utils/logger";
+import { transformArray } from "../utils/transform";
+import { netsuiteRequest, request } from "../utils/http";
 
 // Temporary replacement for fuzzySearch utility - removed unused
 
 interface FilterParam {
   Column: string;
-  Operator: '<' | '<=' | '>' | '>=' | '=' | '!=' | 'Like' | 'Not_Like';
+  Operator: "<" | "<=" | ">" | ">=" | "=" | "!=" | "Like" | "Not_Like";
   Value: string;
 }
 
 interface OrderByParam {
   Column: string;
-  SortOrder?: 'DESC' | 'ASC' | '';
+  SortOrder?: "DESC" | "ASC" | "";
 }
 
 interface NetSuiteParams {
@@ -30,15 +30,15 @@ interface NetSuiteParams {
 
 export type SuiteQLColumns = Dictionary<{
   sql: string;
-  type: 'string' | 'number' | 'date' | 'boolean';
+  type: "string" | "number" | "date" | "boolean";
   format?: string;
   filterOnly?: boolean;
 }>;
 
 export type SuiteScriptColumns = Dictionary<{
   name?: string;
-  type: 'string' | 'number' | 'date' | 'boolean' | 'id' | 'enum';
-  filtertype?: 'string' | 'number' | 'date' | 'boolean' | 'id';
+  type: "string" | "number" | "date" | "boolean" | "id" | "enum";
+  filtertype?: "string" | "number" | "date" | "boolean" | "id";
   format?: string;
   filterOnly?: boolean;
   formula?: string;
@@ -57,38 +57,38 @@ export class NetSuiteHelper {
       .boolean()
       .optional()
       .describe(
-        'If true, would return Count property only. If false, Count property is removed and array of results is returned. Default is false'
+        "If true, would return Count property only. If false, Count property is removed and array of results is returned. Default is false"
       ),
     OrderBy: z
       .object({
-        Column: z.string().describe('Name of the output property to Sort on'),
-        SortOrder: z.enum(['DESC', 'ASC']).default('ASC').describe('Order of the sorting'),
+        Column: z.string().describe("Name of the output property to Sort on"),
+        SortOrder: z.enum(["DESC", "ASC"]).default("ASC").describe("Order of the sorting"),
       })
       .optional()
-      .describe('Sort the results by which output property. Use OrderBy as much as possible'),
+      .describe("Sort the results by which output property. Use OrderBy as much as possible"),
     Filters: z
       .array(
         z.object({
-          Column: z.string().describe('Name of the output property to filter on'),
+          Column: z.string().describe("Name of the output property to filter on"),
           Operator: z
-            .enum(['<', '<=', '>', '>=', '=', '!=', 'Like', 'Not_Like'])
-            .describe('Operator of the filter'),
-          Value: z.string().describe('Value of the filter.'),
+            .enum(["<", "<=", ">", ">=", "=", "!=", "Like", "Not_Like"])
+            .describe("Operator of the filter"),
+          Value: z.string().describe("Value of the filter."),
         })
       )
       .optional()
-      .describe('Filter the results by which output property. Use Filters as much as possible'),
+      .describe("Filter the results by which output property. Use Filters as much as possible"),
     Limit: z
       .number()
       .max(10000)
       .optional()
-      .describe('Limit the number of results. Max value is 10,000'),
+      .describe("Limit the number of results. Max value is 10,000"),
   };
 
-  static getOperator(reqtype: 'sql' | 'script', datatype: string, operator: string): string {
+  static getOperator(reqtype: "sql" | "script", datatype: string, operator: string): string {
     logger.info({
-      Module: 'NetSuiteHelper-getOperator',
-      Message: 'Converting operator for request type and data type',
+      Module: "NetSuiteHelper-getOperator",
+      Message: "Converting operator for request type and data type",
       ObjectMsg: {
         reqtype: reqtype,
         datatype: datatype,
@@ -98,109 +98,109 @@ export class NetSuiteHelper {
 
     let resultOperator: string;
 
-    if (reqtype === 'sql') {
-      if ((operator === '=' && datatype === 'string') || operator === 'Like')
-        resultOperator = 'LIKE';
-      else if ((operator === '!=' && datatype === 'string') || operator === 'Not_Like')
-        resultOperator = 'NOT LIKE';
+    if (reqtype === "sql") {
+      if ((operator === "=" && datatype === "string") || operator === "Like")
+        resultOperator = "LIKE";
+      else if ((operator === "!=" && datatype === "string") || operator === "Not_Like")
+        resultOperator = "NOT LIKE";
       else resultOperator = operator;
     } else {
-      if (datatype === 'boolean') resultOperator = 'is';
-      else if (datatype === 'number') {
+      if (datatype === "boolean") resultOperator = "is";
+      else if (datatype === "number") {
         switch (operator) {
-          case '=':
-            resultOperator = 'EQUALTO';
+          case "=":
+            resultOperator = "EQUALTO";
             break;
-          case '!=':
-            resultOperator = 'NOTEQUALTO';
+          case "!=":
+            resultOperator = "NOTEQUALTO";
             break;
-          case '<':
-            resultOperator = 'LESSTHAN';
+          case "<":
+            resultOperator = "LESSTHAN";
             break;
-          case '<=':
-            resultOperator = 'LESSTHANOREQUALTO';
+          case "<=":
+            resultOperator = "LESSTHANOREQUALTO";
             break;
-          case '>':
-            resultOperator = 'GREATERTHAN';
+          case ">":
+            resultOperator = "GREATERTHAN";
             break;
-          case '>=':
-            resultOperator = 'GREATERTHANOREQUALTO';
+          case ">=":
+            resultOperator = "GREATERTHANOREQUALTO";
             break;
           default:
             throw new CFError(
-              'AIErr',
+              "AIErr",
               `Operator ${operator} for datetype ${datatype} not found for ${reqtype}`
             );
         }
-      } else if (datatype === 'date') {
+      } else if (datatype === "date") {
         switch (operator) {
-          case '=':
-            resultOperator = 'ON';
+          case "=":
+            resultOperator = "ON";
             break;
-          case '!=':
-            resultOperator = 'NOTON';
+          case "!=":
+            resultOperator = "NOTON";
             break;
-          case '<':
-            resultOperator = 'BEFORE';
+          case "<":
+            resultOperator = "BEFORE";
             break;
-          case '<=':
-            resultOperator = 'ONORBEFORE';
+          case "<=":
+            resultOperator = "ONORBEFORE";
             break;
-          case '>':
-            resultOperator = 'AFTER';
+          case ">":
+            resultOperator = "AFTER";
             break;
-          case '>=':
-            resultOperator = 'ONORAFTER';
+          case ">=":
+            resultOperator = "ONORAFTER";
             break;
           default:
             throw new CFError(
-              'AIErr',
+              "AIErr",
               `Operator ${operator} for datetype ${datatype} not found for ${reqtype}`
             );
         }
-      } else if (datatype === 'string') {
+      } else if (datatype === "string") {
         switch (operator) {
-          case '=':
-          case 'Like':
-            resultOperator = 'CONTAINS';
+          case "=":
+          case "Like":
+            resultOperator = "CONTAINS";
             break;
-          case '!=':
-          case 'Not_Like':
-            resultOperator = 'DOESNOTCONTAIN';
+          case "!=":
+          case "Not_Like":
+            resultOperator = "DOESNOTCONTAIN";
             break;
           default:
             throw new CFError(
-              'AIErr',
+              "AIErr",
               `Operator ${operator} for datetype ${datatype} not found for ${reqtype}`
             );
         }
-      } else if (datatype === 'id') {
+      } else if (datatype === "id") {
         switch (operator) {
-          case '=':
-          case 'Like':
-            resultOperator = 'ANYOF';
+          case "=":
+          case "Like":
+            resultOperator = "ANYOF";
             break;
-          case '!=':
-          case 'Not_Like':
-            resultOperator = 'NONEOF';
+          case "!=":
+          case "Not_Like":
+            resultOperator = "NONEOF";
             break;
           default:
             throw new CFError(
-              'AIErr',
+              "AIErr",
               `Operator ${operator} for datetype ${datatype} not found for ${reqtype}`
             );
         }
       } else {
         throw new CFError(
-          'AIErr',
+          "AIErr",
           `Operator ${operator} for datetype ${datatype} not found for ${reqtype}`
         );
       }
     }
 
     logger.info({
-      Module: 'NetSuiteHelper-getOperator',
-      Message: 'Operator conversion completed',
+      Module: "NetSuiteHelper-getOperator",
+      Message: "Operator conversion completed",
       ObjectMsg: {
         reqtype: reqtype,
         datatype: datatype,
@@ -214,8 +214,8 @@ export class NetSuiteHelper {
 
   static getFiltersSQL(Columns: SuiteQLColumns, filtersParams: FilterParam[]): string {
     logger.info({
-      Module: 'NetSuiteHelper-getFiltersSQL',
-      Message: 'Starting SQL filter generation',
+      Module: "NetSuiteHelper-getFiltersSQL",
+      Message: "Starting SQL filter generation",
       ObjectMsg: {
         columnCount: Object.keys(Columns).length,
         filterCount: Array.isArray(filtersParams) ? filtersParams.length : 0,
@@ -223,18 +223,18 @@ export class NetSuiteHelper {
       },
     });
 
-    let filters = '';
+    let filters = "";
     let processedFilters = 0;
     let skippedFilters = 0;
 
     for (const filter of filtersParams) {
       // Check if the column exists in the Columns object
-      if (!Columns[filter['Column']]) {
+      if (!Columns[filter["Column"]]) {
         logger.info({
-          Module: 'NetSuiteHelper-getFiltersSQL',
-          Message: 'Column not found in Columns object, skipping filter',
+          Module: "NetSuiteHelper-getFiltersSQL",
+          Message: "Column not found in Columns object, skipping filter",
           ObjectMsg: {
-            column: filter['Column'],
+            column: filter["Column"],
             availableColumns: Object.keys(Columns),
             filterDetails: filter,
           },
@@ -243,34 +243,34 @@ export class NetSuiteHelper {
         continue;
       }
 
-      if (filters !== '') filters += ' AND ';
+      if (filters !== "") filters += " AND ";
 
-      const columnConfig = Columns[filter['Column']];
-      const operator = this.getOperator('sql', columnConfig.type, filter['Operator']);
+      const columnConfig = Columns[filter["Column"]];
+      const operator = this.getOperator("sql", columnConfig.type, filter["Operator"]);
 
       filters += columnConfig.sql;
       filters += ` ${operator} `;
 
       let formattedValue: string;
-      if (columnConfig.type === 'date') {
-        const val = DateUtil.ISOToFormat(filter['Value'], 'yyyyMMdd');
+      if (columnConfig.type === "date") {
+        const val = DateUtil.ISOToFormat(filter["Value"], "yyyyMMdd");
         formattedValue = ` TO_DATE('${val}', 'YYYYMMDD') `;
-      } else if (columnConfig.type === 'string') {
-        formattedValue = ` '%${filter['Value']}%' `;
+      } else if (columnConfig.type === "string") {
+        formattedValue = ` '%${filter["Value"]}%' `;
       } else {
-        formattedValue = ` '${filter['Value']}' `;
+        formattedValue = ` '${filter["Value"]}' `;
       }
 
       filters += formattedValue;
       processedFilters++;
 
       logger.info({
-        Module: 'NetSuiteHelper-getFiltersSQL',
-        Message: 'Processed individual filter',
+        Module: "NetSuiteHelper-getFiltersSQL",
+        Message: "Processed individual filter",
         ObjectMsg: {
-          column: filter['Column'],
-          operator: filter['Operator'],
-          value: filter['Value'],
+          column: filter["Column"],
+          operator: filter["Operator"],
+          value: filter["Value"],
           sqlOperator: operator,
           columnType: columnConfig.type,
           formattedValue: formattedValue.trim(),
@@ -279,8 +279,8 @@ export class NetSuiteHelper {
     }
 
     logger.info({
-      Module: 'NetSuiteHelper-getFiltersSQL',
-      Message: 'SQL filter generation completed',
+      Module: "NetSuiteHelper-getFiltersSQL",
+      Message: "SQL filter generation completed",
       ObjectMsg: {
         processedFilters: processedFilters,
         skippedFilters: skippedFilters,
@@ -300,8 +300,8 @@ export class NetSuiteHelper {
     defaultSort: { Column: string; SortOrder: string }
   ): string {
     logger.info({
-      Module: 'NetSuiteHelper-formatSQL',
-      Message: 'Starting SQL formatting',
+      Module: "NetSuiteHelper-formatSQL",
+      Message: "Starting SQL formatting",
       ObjectMsg: {
         baseSql: sql,
         columnCount: Object.keys(Columns).length,
@@ -315,40 +315,40 @@ export class NetSuiteHelper {
 
     const columns = Object.keys(Columns)
       .map((key: string) =>
-        Columns[key].filterOnly !== true ? `${Columns[key].sql} AS ${key}` : ''
+        Columns[key].filterOnly !== true ? `${Columns[key].sql} AS ${key}` : ""
       )
-      .filter((k) => k !== '')
-      .join(', ');
+      .filter((k) => k !== "")
+      .join(", ");
 
     logger.info({
-      Module: 'NetSuiteHelper-formatSQL',
-      Message: 'Generated column selection',
+      Module: "NetSuiteHelper-formatSQL",
+      Message: "Generated column selection",
       ObjectMsg: {
         columnsGenerated: columns,
-        filteredOutCount: Object.keys(Columns).length - columns.split(',').length,
+        filteredOutCount: Object.keys(Columns).length - columns.split(",").length,
         isCountOnly: params.CountOnly === true,
       },
     });
 
-    const limit = params.CountOnly === true ? '' : params.Limit ? 'TOP ' + params.Limit : '';
+    const limit = params.CountOnly === true ? "" : params.Limit ? "TOP " + params.Limit : "";
 
     sql = sql.replace(
-      '{Columns}',
-      params.CountOnly === true ? 'COUNT(*) AS Count' : `${limit} ${columns}`
+      "{Columns}",
+      params.CountOnly === true ? "COUNT(*) AS Count" : `${limit} ${columns}`
     );
 
     const OrderBy =
       params.CountOnly === true
-        ? ''
+        ? ""
         : params.OrderBy && Columns[params.OrderBy.Column]
-        ? Columns[params.OrderBy.Column].sql + ' ' + params.OrderBy.SortOrder
-        : Columns[defaultSort.Column]
-        ? Columns[defaultSort.Column].sql + ' ' + defaultSort.SortOrder
-        : '';
+          ? Columns[params.OrderBy.Column].sql + " " + params.OrderBy.SortOrder
+          : Columns[defaultSort.Column]
+            ? Columns[defaultSort.Column].sql + " " + defaultSort.SortOrder
+            : "";
 
     logger.info({
-      Module: 'NetSuiteHelper-formatSQL',
-      Message: 'Generated ORDER BY clause',
+      Module: "NetSuiteHelper-formatSQL",
+      Message: "Generated ORDER BY clause",
       ObjectMsg: {
         hasCustomOrderBy: !!(params.OrderBy && Columns[params.OrderBy.Column]),
         customOrderBy: params.OrderBy,
@@ -357,51 +357,51 @@ export class NetSuiteHelper {
       },
     });
 
-    sql = sql.replace('{OrderBy}', OrderBy !== '' ? 'ORDER BY ' + OrderBy : '');
+    sql = sql.replace("{OrderBy}", OrderBy !== "" ? "ORDER BY " + OrderBy : "");
 
-    const filterString = params.Filters ? this.getFiltersSQL(Columns, params.Filters) : '';
-    let filters = '';
-    if (inbuiltFilter !== '') filters += ' ' + inbuiltFilter;
-    if (filterString !== '') filters += (filters !== '' ? ' AND ' : '') + filterString;
+    const filterString = params.Filters ? this.getFiltersSQL(Columns, params.Filters) : "";
+    let filters = "";
+    if (inbuiltFilter !== "") filters += " " + inbuiltFilter;
+    if (filterString !== "") filters += (filters !== "" ? " AND " : "") + filterString;
 
     logger.info({
-      Module: 'NetSuiteHelper-formatSQL',
-      Message: 'Generated WHERE clause',
+      Module: "NetSuiteHelper-formatSQL",
+      Message: "Generated WHERE clause",
       ObjectMsg: {
-        hasInbuiltFilter: inbuiltFilter !== '',
-        hasCustomFilters: filterString !== '',
+        hasInbuiltFilter: inbuiltFilter !== "",
+        hasCustomFilters: filterString !== "",
         inbuiltFilter: inbuiltFilter,
         customFilters: filterString,
         combinedFilters: filters,
       },
     });
 
-    sql = sql.replace('{Filters}', filters !== '' ? 'WHERE ' + filters : '');
+    sql = sql.replace("{Filters}", filters !== "" ? "WHERE " + filters : "");
 
     const processingTime = Date.now() - startTime;
 
     logger.info({
-      Module: 'NetSuiteHelper-formatSQL',
-      Message: 'SQL formatting completed',
+      Module: "NetSuiteHelper-formatSQL",
+      Message: "SQL formatting completed",
       ObjectMsg: {
         finalSql: sql,
         sqlLength: sql.length,
         processingTime: processingTime,
         hasLimit: !!limit,
-        hasOrderBy: OrderBy !== '',
-        hasFilters: filters !== '',
+        hasOrderBy: OrderBy !== "",
+        hasFilters: filters !== "",
       },
     });
 
     return sql;
   }
 
-  private static errorfn(msg: string, type: 'UserErr' | 'AIErr' = 'UserErr'): never {
+  private static errorfn(msg: string, type: "UserErr" | "AIErr" = "UserErr"): never {
     const errorMessage = msg;
 
     logger.error({
-      Module: 'NetSuiteHelper-error',
-      Message: 'Error function called',
+      Module: "NetSuiteHelper-error",
+      Message: "Error function called",
       ObjectMsg: {
         originalMessage: msg,
         errorType: type,
@@ -413,13 +413,13 @@ export class NetSuiteHelper {
     throw new CFError(type, errorMessage);
   }
 
-  static error(msg: string, type?: 'UserErr' | 'AIErr'): never {
+  static error(msg: string, type?: "UserErr" | "AIErr"): never {
     logger.info({
-      Module: 'NetSuiteHelper-error',
-      Message: 'Public error method called',
+      Module: "NetSuiteHelper-error",
+      Message: "Public error method called",
       ObjectMsg: {
         message: msg,
-        type: type || 'UserErr',
+        type: type || "UserErr",
       },
     });
 
@@ -439,26 +439,26 @@ export class NetSuiteHelper {
   }> {
     const executionStartTime = Date.now();
     logger.info({
-      Module: 'NetSuiteHelper-executeSuiteQL',
-      Message: 'Starting SuiteQL execution',
+      Module: "NetSuiteHelper-executeSuiteQL",
+      Message: "Starting SuiteQL execution",
       ObjectMsg: {
         queryLength: query.length,
         offset: offset || 0,
         startTime: new Date(executionStartTime).toISOString(),
-        queryPreview: query.substring(0, 100) + (query.length > 100 ? '...' : ''),
+        queryPreview: query.substring(0, 100) + (query.length > 100 ? "..." : ""),
       },
     });
 
     try {
-      const path = 'query/v1/suiteql';
+      const path = "query/v1/suiteql";
 
       const requestData = { q: query };
       const requestParams = { offset: offset || 0 };
-      const requestHeaders = { Prefer: 'transient' };
+      const requestHeaders = { Prefer: "transient" };
 
       logger.info({
-        Module: 'NetSuiteHelper-executeSuiteQL',
-        Message: 'Making SuiteQL request',
+        Module: "NetSuiteHelper-executeSuiteQL",
+        Message: "Making SuiteQL request",
         ObjectMsg: {
           path: path,
           requestDataSize: JSON.stringify(requestData).length,
@@ -470,7 +470,7 @@ export class NetSuiteHelper {
       const requestStartTime = Date.now();
       const data = (await netsuiteRequest(
         path,
-        'POST',
+        "POST",
         requestData,
         requestParams,
         requestHeaders
@@ -494,8 +494,8 @@ export class NetSuiteHelper {
       const totalDuration = Date.now() - executionStartTime;
 
       logger.info({
-        Module: 'NetSuiteHelper-executeSuiteQL',
-        Message: 'SuiteQL execution completed successfully',
+        Module: "NetSuiteHelper-executeSuiteQL",
+        Message: "SuiteQL execution completed successfully",
         ObjectMsg: {
           totalCount: result.totalCount,
           itemsReturned: result.items.length,
@@ -513,21 +513,21 @@ export class NetSuiteHelper {
     } catch (error) {
       const totalDuration = Date.now() - executionStartTime;
       logger.error({
-        Module: 'NetSuiteHelper-executeSuiteQL',
-        Message: 'SuiteQL execution failed',
+        Module: "NetSuiteHelper-executeSuiteQL",
+        Message: "SuiteQL execution failed",
         ObjectMsg: {
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: error instanceof Error ? error.message : "Unknown error",
 
           queryLength: query.length,
           offset: offset || 0,
           totalDuration: totalDuration,
-          queryPreview: query.substring(0, 200) + (query.length > 200 ? '...' : ''),
+          queryPreview: query.substring(0, 200) + (query.length > 200 ? "..." : ""),
         },
       });
 
       this.error(
-        `Failed to execute query: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'AIErr'
+        `Failed to execute query: ${error instanceof Error ? error.message : "Unknown error"}`,
+        "AIErr"
       );
 
       // Return default structure if error doesn't throw
@@ -547,23 +547,23 @@ export class NetSuiteHelper {
   ): Array<string | string[]> {
     const filters: Array<string | string[]> = [];
     for (const filter of filtersParams) {
-      if (filters.length !== 0) filters.push('AND');
+      if (filters.length !== 0) filters.push("AND");
 
       const colName = Columns[filter.Column].filterformula
         ? Columns[filter.Column].filterformula!
         : Columns[filter.Column].formula
-        ? Columns[filter.Column].formula!
-        : Columns[filter.Column].join
-        ? `${Columns[filter.Column].join}.${Columns[filter.Column].name}`
-        : Columns[filter.Column].name!;
+          ? Columns[filter.Column].formula!
+          : Columns[filter.Column].join
+            ? `${Columns[filter.Column].join}.${Columns[filter.Column].name}`
+            : Columns[filter.Column].name!;
       const operator = this.getOperator(
-        'script',
+        "script",
         Columns[filter.Column].filtertype ?? Columns[filter.Column].type,
         filter.Operator
       );
       let value = filter.Value;
-      if (Columns[filter.Column].type === 'date') {
-        value = DateUtil.ISOToFormat(filter.Value, Columns[filter.Column].format ?? 'M/d/yyyy');
+      if (Columns[filter.Column].type === "date") {
+        value = DateUtil.ISOToFormat(filter.Value, Columns[filter.Column].format ?? "M/d/yyyy");
       }
 
       filters.push([colName, operator, value]);
@@ -602,24 +602,24 @@ export class NetSuiteHelper {
     };
     const OrderBy =
       params.CountOnly === true
-        ? ['', '']
+        ? ["", ""]
         : params.OrderBy
-        ? [params.OrderBy.Column, params.OrderBy.SortOrder || 'ASC']
-        : [defaultSort.Column, defaultSort.SortOrder];
+          ? [params.OrderBy.Column, params.OrderBy.SortOrder || "ASC"]
+          : [defaultSort.Column, defaultSort.SortOrder];
 
     searchRestletParams.columns = Object.keys(Columns)
       .map((key: string) => {
         if (Columns[key].filterOnly === true) return {};
         const col: GenDictionary = {
           name: Columns[key].formula
-            ? Columns[key].formula?.split(':')[0].trim()
+            ? Columns[key].formula?.split(":")[0].trim()
             : Columns[key].name,
           txt: Columns[key].txt,
           join: Columns[key].join,
           summary: Columns[key].summary,
-          formula: Columns[key].formula ? Columns[key].formula?.split(':')[1].trim() : undefined,
+          formula: Columns[key].formula ? Columns[key].formula?.split(":")[1].trim() : undefined,
         };
-        if (key === OrderBy[0]) col['sort'] = OrderBy[1];
+        if (key === OrderBy[0]) col["sort"] = OrderBy[1];
         return col;
       })
       .filter((i) => !lodash.isEmpty(i));
@@ -631,7 +631,7 @@ export class NetSuiteHelper {
 
     searchRestletParams.filters = inbuiltFilter ? [...inbuiltFilter] : [];
     if (searchRestletParams.filters.length > 0 && filters.length > 0)
-      searchRestletParams.filters.push('AND');
+      searchRestletParams.filters.push("AND");
     filters.forEach((fi: string | string[]) => {
       searchRestletParams.filters.push(fi);
     });
@@ -650,8 +650,8 @@ export class NetSuiteHelper {
     const executionStartTime = Date.now();
 
     logger.info({
-      Module: 'NetSuiteHelper-searchRestlet',
-      Message: 'Starting search restlet execution',
+      Module: "NetSuiteHelper-searchRestlet",
+      Message: "Starting search restlet execution",
       ObjectMsg: {
         type: type,
         columnCount: Object.keys(columns).length,
@@ -680,8 +680,8 @@ export class NetSuiteHelper {
     }
 
     logger.info({
-      Module: 'NetSuite-Helper-SearchRestlet',
-      Message: 'Making search restlet request',
+      Module: "NetSuite-Helper-SearchRestlet",
+      Message: "Making search restlet request",
       ObjectMsg: searchRestletParams,
     });
 
@@ -689,12 +689,12 @@ export class NetSuiteHelper {
       const searchRestletUrl = process.env.NETSUITE_SEARCH_REST_LET;
 
       if (!searchRestletUrl) {
-        this.error('NETSUITE_SEARCH_REST_LET environment variable not configured', 'AIErr');
+        this.error("NETSUITE_SEARCH_REST_LET environment variable not configured", "AIErr");
       }
 
       const authToken = process.env.NETSUITE_ACCESS_TOKEN;
       if (!authToken) {
-        this.error('NETSUITE_ACCESS_TOKEN environment variable not configured', 'AIErr');
+        this.error("NETSUITE_ACCESS_TOKEN environment variable not configured", "AIErr");
       }
 
       const requestStartTime = Date.now();
@@ -703,19 +703,19 @@ export class NetSuiteHelper {
         error?: unknown;
         data?: { count: number; items: Record<string, unknown>[] };
       }>({
-        method: 'POST',
+        method: "POST",
         url: searchRestletUrl!,
         data: searchRestletParams,
         headers: {
           Authorization: `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
       const requestDuration = Date.now() - requestStartTime;
 
       if (resp.success === false) {
-        throw new CFError('APIErr', JSON.stringify(resp.error));
+        throw new CFError("APIErr", JSON.stringify(resp.error));
       }
 
       const result = {
@@ -727,8 +727,8 @@ export class NetSuiteHelper {
         const countResult = { Count: result.count };
 
         logger.info({
-          Module: 'NetSuiteHelper-searchRestlet',
-          Message: 'Search restlet count-only execution completed',
+          Module: "NetSuiteHelper-searchRestlet",
+          Message: "Search restlet count-only execution completed",
           ObjectMsg: {
             count: result.count,
             requestDuration: requestDuration,
@@ -741,14 +741,14 @@ export class NetSuiteHelper {
 
       // Transform the columns to the format expected by the transformArray function
       const transformColumns: Dictionary<{
-        type: 'string' | 'number' | 'date' | 'boolean' | 'id';
+        type: "string" | "number" | "date" | "boolean" | "id";
         format?: string;
       }> = {};
 
       Object.keys(columns).forEach((key) => {
         if (columns[key].filterOnly !== true) {
           transformColumns[key] = {
-            type: columns[key].type === 'enum' ? 'string' : columns[key].type,
+            type: columns[key].type === "enum" ? "string" : columns[key].type,
             format: columns[key].format,
           };
         }
@@ -757,8 +757,8 @@ export class NetSuiteHelper {
       const output = transformArray(result.items as unknown as unknown[][], transformColumns);
 
       logger.info({
-        Module: 'NetSuiteHelper-searchRestlet',
-        Message: 'Transform debug info',
+        Module: "NetSuiteHelper-searchRestlet",
+        Message: "Transform debug info",
         ObjectMsg: {
           transformColumns: transformColumns,
           rawItemsSample: result.items.slice(0, 2),
@@ -768,8 +768,8 @@ export class NetSuiteHelper {
       const totalDuration = Date.now() - executionStartTime;
 
       logger.info({
-        Module: 'NetSuiteHelper-searchRestlet',
-        Message: 'Search restlet execution completed successfully',
+        Module: "NetSuiteHelper-searchRestlet",
+        Message: "Search restlet execution completed successfully",
         ObjectMsg: {
           itemsReturned: result.items.length,
           transformedItemsCount: output.length,
@@ -785,10 +785,10 @@ export class NetSuiteHelper {
       const totalDuration = Date.now() - executionStartTime;
 
       logger.error({
-        Module: 'NetSuiteHelper-searchRestlet',
-        Message: 'Search restlet execution failed',
+        Module: "NetSuiteHelper-searchRestlet",
+        Message: "Search restlet execution failed",
         ObjectMsg: {
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: error instanceof Error ? error.message : "Unknown error",
 
           type: type,
           params: params,
@@ -801,8 +801,8 @@ export class NetSuiteHelper {
       }
 
       this.error(
-        `Failed to execute search: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'AIErr'
+        `Failed to execute search: ${error instanceof Error ? error.message : "Unknown error"}`,
+        "AIErr"
       );
 
       // This will never be reached due to the error throwing above, but included for type safety
@@ -817,19 +817,19 @@ export class NetSuiteHelper {
     const checkDefault = { period: true, date: true };
     check = lodash.merge(checkDefault, check);
     if (!params.Filters || !Array.isArray(params.Filters) || params.Filters.length === 0)
-      this.error('Filters cannot be empty', 'AIErr');
+      this.error("Filters cannot be empty", "AIErr");
 
     if (check.period === true) {
-      const periodFilter = params.Filters?.find((fil: FilterParam) => fil.Column === 'Period');
-      if (periodFilter) this.error('Period cannot be used as filter, use Date column', 'AIErr');
+      const periodFilter = params.Filters?.find((fil: FilterParam) => fil.Column === "Period");
+      if (periodFilter) this.error("Period cannot be used as filter, use Date column", "AIErr");
     }
 
     if (check.date === true) {
       const dateFilter = params.Filters?.find(
-        (fil: FilterParam) => fil.Column === 'Date' || fil.Column === 'DueDate'
+        (fil: FilterParam) => fil.Column === "Date" || fil.Column === "DueDate"
       );
       if (!dateFilter)
-        this.error('Date filter is required, as data is too much otherwise', 'AIErr');
+        this.error("Date filter is required, as data is too much otherwise", "AIErr");
     }
   }
 }

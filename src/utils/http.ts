@@ -1,5 +1,5 @@
-import axios, { AxiosRequestConfig, Method } from 'axios';
-import { logger } from './logger';
+import axios, { AxiosRequestConfig, Method } from "axios";
+import { logger } from "./logger";
 
 export type HTTPRequest = {
   method?: Method;
@@ -9,7 +9,7 @@ export type HTTPRequest = {
   headers?: Record<string, string>;
 };
 
-export type NetSuiteHTTPRequest = Omit<HTTPRequest, 'headers'> & {
+export type NetSuiteHTTPRequest = Omit<HTTPRequest, "headers"> & {
   headers?: Record<string, string>;
 };
 
@@ -20,8 +20,8 @@ export type NetSuiteHTTPRequest = Omit<HTTPRequest, 'headers'> & {
 export async function request<T = unknown>(req: HTTPRequest): Promise<T> {
   const requestStartTime = Date.now();
   logger.info({
-    Module: 'http-request',
-    Message: 'Starting HTTP request',
+    Module: "http-request",
+    Message: "Starting HTTP request",
     ObjectMsg: {
       url: req.url,
       method: req.method,
@@ -34,21 +34,21 @@ export async function request<T = unknown>(req: HTTPRequest): Promise<T> {
 
   if (!req.method) {
     logger.error({
-      Module: 'http-request',
-      Message: 'Method is required but not provided',
-      ObjectMsg: { requestObject: { ...req, data: req.data ? '[REDACTED]' : undefined } },
+      Module: "http-request",
+      Message: "Method is required but not provided",
+      ObjectMsg: { requestObject: { ...req, data: req.data ? "[REDACTED]" : undefined } },
     });
-    throw new Error('Method is required');
+    throw new Error("Method is required");
   }
 
-  const baseUrl = '';
+  const baseUrl = "";
 
   try {
     const config: AxiosRequestConfig = {
       url: baseUrl ? `${baseUrl}${req.url}` : req.url,
       method: req.method,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...(req.headers || {}),
       },
       data: req.data,
@@ -56,12 +56,12 @@ export async function request<T = unknown>(req: HTTPRequest): Promise<T> {
     };
 
     logger.info({
-      Module: 'http-request',
-      Message: 'Request config prepared',
+      Module: "http-request",
+      Message: "Request config prepared",
       ObjectMsg: {
         url: config.url,
         method: config.method,
-        headers: { ...config.headers, Authorization: 'Bearer [REDACTED]' },
+        headers: { ...config.headers, Authorization: "Bearer [REDACTED]" },
         params: config.params,
         hasData: !!config.data,
         dataSize: config.data ? JSON.stringify(config.data).length : 0,
@@ -74,23 +74,23 @@ export async function request<T = unknown>(req: HTTPRequest): Promise<T> {
     const totalDuration = Date.now() - requestStartTime;
 
     logger.info({
-      Module: 'http-request',
-      Message: 'Request successful',
+      Module: "http-request",
+      Message: "Request successful",
       ObjectMsg: {
         status: resp.status,
         statusText: resp.statusText,
         requestDuration: requestDuration,
         totalDuration: totalDuration,
         responseSize: JSON.stringify(resp.data).length,
-        contentType: resp.headers['content-type'],
+        contentType: resp.headers["content-type"],
       },
     });
     return resp.data;
   } catch (error) {
     const totalDuration = Date.now() - requestStartTime;
     logger.error({
-      Module: 'http-request',
-      Message: 'Request failed',
+      Module: "http-request",
+      Message: "Request failed",
       ObjectMsg: {
         error: error instanceof Error ? error.message : String(error),
         url: req.url,
@@ -106,24 +106,24 @@ export async function request<T = unknown>(req: HTTPRequest): Promise<T> {
     throw error;
   }
 }
-export async function get<T = unknown>(req: Omit<HTTPRequest, 'method'>): Promise<T> {
-  return request<T>({ ...req, method: 'get' });
+export async function get<T = unknown>(req: Omit<HTTPRequest, "method">): Promise<T> {
+  return request<T>({ ...req, method: "get" });
 }
 
-export async function post<T = unknown>(req: Omit<HTTPRequest, 'method'>): Promise<T> {
-  return request<T>({ ...req, method: 'post' });
+export async function post<T = unknown>(req: Omit<HTTPRequest, "method">): Promise<T> {
+  return request<T>({ ...req, method: "post" });
 }
 
-export async function put<T = unknown>(req: Omit<HTTPRequest, 'method'>): Promise<T> {
-  return request<T>({ ...req, method: 'put' });
+export async function put<T = unknown>(req: Omit<HTTPRequest, "method">): Promise<T> {
+  return request<T>({ ...req, method: "put" });
 }
 
-export async function patch<T = unknown>(req: Omit<HTTPRequest, 'method'>): Promise<T> {
-  return request<T>({ ...req, method: 'patch' });
+export async function patch<T = unknown>(req: Omit<HTTPRequest, "method">): Promise<T> {
+  return request<T>({ ...req, method: "patch" });
 }
 
-export async function del<T = unknown>(req: Omit<HTTPRequest, 'method'>): Promise<T> {
-  return request<T>({ ...req, method: 'delete' });
+export async function del<T = unknown>(req: Omit<HTTPRequest, "method">): Promise<T> {
+  return request<T>({ ...req, method: "delete" });
 }
 
 /**
@@ -132,14 +132,14 @@ export async function del<T = unknown>(req: Omit<HTTPRequest, 'method'>): Promis
  */
 export async function netsuiteRequest<T = unknown>(
   endpoint: string,
-  method: Method = 'GET',
+  method: Method = "GET",
   data?: unknown,
   params?: Record<string, unknown>,
   headers?: Record<string, string>
 ): Promise<T> {
   logger.info({
-    Module: 'netsuite-request',
-    Message: 'Starting NetSuite REST API request',
+    Module: "netsuite-request",
+    Message: "Starting NetSuite REST API request",
     ObjectMsg: {
       endpoint: endpoint,
       method: method,
@@ -156,22 +156,22 @@ export async function netsuiteRequest<T = unknown>(
 
   if (!baseUrl || !authToken) {
     logger.error({
-      Module: 'netsuite-request',
+      Module: "netsuite-request",
       Message:
-        'Missing required environment variables for NetSuite request - NETSUITE_REST_URL or NETSUITE_ACCESS_TOKEN',
+        "Missing required environment variables for NetSuite request - NETSUITE_REST_URL or NETSUITE_ACCESS_TOKEN",
     });
     throw new Error(
-      'Missing required environment variables for NetSuite request - NETSUITE_REST_URL or NETSUITE_ACCESS_TOKEN'
+      "Missing required environment variables for NetSuite request - NETSUITE_REST_URL or NETSUITE_ACCESS_TOKEN"
     );
   }
 
-  const url = endpoint.startsWith('/')
-    ? `${baseUrl.replace(/\/$/, '')}${endpoint}`
-    : `${baseUrl.replace(/\/$/, '')}/${endpoint}`;
+  const url = endpoint.startsWith("/")
+    ? `${baseUrl.replace(/\/$/, "")}${endpoint}`
+    : `${baseUrl.replace(/\/$/, "")}/${endpoint}`;
 
   logger.info({
-    Module: 'netsuite-request',
-    Message: 'Constructed full URL for NetSuite request',
+    Module: "netsuite-request",
+    Message: "Constructed full URL for NetSuite request",
     ObjectMsg: {
       baseUrl: baseUrl,
       endpoint: endpoint,
@@ -186,7 +186,7 @@ export async function netsuiteRequest<T = unknown>(
     data,
     params,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${authToken}`,
       ...(headers || {}),
     },

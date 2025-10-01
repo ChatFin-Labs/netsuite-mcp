@@ -1,9 +1,9 @@
-import { createHash, createHmac } from 'crypto';
-import * as fs from 'fs';
-import { GenDictionary } from '../Models/General';
-import path from 'path';
-import { localstorage } from './localstorage';
-import { v4 as uuidv4 } from 'uuid';
+import { createHash, createHmac } from "crypto";
+import * as fs from "fs";
+import { GenDictionary } from "../Models/General";
+import path from "path";
+import { localstorage } from "./localstorage";
+import { v4 as uuidv4 } from "uuid";
 
 const getUUID = (): string => {
   return uuidv4();
@@ -14,7 +14,7 @@ function isDefined<T>(value: T | null | undefined): value is T {
 }
 
 const genericErr = (): string => {
-  const correlationId = localstorage.get<string>('CorrelationId');
+  const correlationId = localstorage.get<string>("CorrelationId");
   return `There was an error while processing your request (Id:${correlationId}).`;
 };
 
@@ -39,7 +39,7 @@ function arrayHas<T extends Record<string, unknown>>(
 const isJSONString = (str: string): boolean => {
   try {
     const o = JSON.parse(str);
-    if (o && typeof o === 'object') {
+    if (o && typeof o === "object") {
       return true;
     }
   } catch {
@@ -49,9 +49,9 @@ const isJSONString = (str: string): boolean => {
 };
 
 const hash = (str: string, key?: string): string => {
-  const algo = 'sha256';
+  const algo = "sha256";
   const hasher = key ? createHmac(algo, key) : createHash(algo);
-  return hasher.update(str).digest('hex').toString();
+  return hasher.update(str).digest("hex").toString();
 };
 
 const sanitizeFileName = (fileName: string): boolean => {
@@ -61,7 +61,7 @@ const sanitizeFileName = (fileName: string): boolean => {
 
 const getFolderPath = (userId: number, fileName?: string, subFolder?: string): string => {
   // Base user folder path
-  let baseFolderPath = path.join('UserFiles', `User_${userId}`);
+  let baseFolderPath = path.join("UserFiles", `User_${userId}`);
 
   if (subFolder) baseFolderPath = path.join(baseFolderPath, subFolder);
 
@@ -71,12 +71,12 @@ const getFolderPath = (userId: number, fileName?: string, subFolder?: string): s
   }
 
   if (fileName) {
-    if (!sanitizeFileName(fileName)) throw new Error('Invalid file name');
+    if (!sanitizeFileName(fileName)) throw new Error("Invalid file name");
 
     const fullFilePath = path.join(baseFolderPath, fileName);
 
     // Check if the last part of filePath is a file
-    const isFile = path.extname(fullFilePath) !== '';
+    const isFile = path.extname(fullFilePath) !== "";
 
     // If it's a file, only create folder until parent dir
     const directoryPath = isFile ? path.dirname(fullFilePath) : fullFilePath;
@@ -101,7 +101,7 @@ function toPromise<T>(value: T | Promise<T>): Promise<T> {
 
 function getDifferences(arr: number[]): number[] {
   if (arr.length < 2) {
-    throw new Error('Array must contain at least two elements');
+    throw new Error("Array must contain at least two elements");
   }
 
   const differences: number[] = [];
@@ -135,15 +135,15 @@ function getMaxOccurredElement<T>(arr: T[]): T | null {
 
 const formatSize = (size: number): string => {
   const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
-  return +(size / Math.pow(1024, i)).toFixed(2) * 1 + ' ' + ['B', 'KB', 'MB', 'GB', 'TB'][i];
+  return +(size / Math.pow(1024, i)).toFixed(2) * 1 + " " + ["B", "KB", "MB", "GB", "TB"][i];
 };
 
-const trim = (matcher: 'Execute' | 'Respond' | 'UserErr' | 'AIErr', input: string): string => {
-  return input.replace(matcher + ':', '').trim();
+const trim = (matcher: "Execute" | "Respond" | "UserErr" | "AIErr", input: string): string => {
+  return input.replace(matcher + ":", "").trim();
 };
 
 const escapeRegExp = function (text: string): string {
-  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 };
 
 const extractHashtags = function (input: string): {
@@ -157,7 +157,7 @@ const extractHashtags = function (input: string): {
   const hashtags = input.match(hashtagRegex) || [];
 
   // Remove hashtags from the original string
-  const cleanString = input.replace(hashtagRegex, '').trim();
+  const cleanString = input.replace(hashtagRegex, "").trim();
 
   return {
     hashtags,
@@ -171,16 +171,16 @@ const generateVarDeclarations = function (items: GenDictionary[]): string {
       let formattedValue: string;
 
       switch (item.type) {
-        case 'number':
+        case "number":
           formattedValue = String(item.value);
           break;
-        case 'multi-dropdown':
+        case "multi-dropdown":
           formattedValue = JSON.stringify(item.value);
           break;
-        case 'dropdown':
-        case 'string':
-        case 'file':
-        case 'date':
+        case "dropdown":
+        case "string":
+        case "file":
+        case "date":
         default:
           formattedValue = `"${item.value}"`;
           break;
@@ -188,7 +188,7 @@ const generateVarDeclarations = function (items: GenDictionary[]): string {
 
       return `var ${item.name} = ${formattedValue};`;
     })
-    .join('\n');
+    .join("\n");
 };
 
 export {
