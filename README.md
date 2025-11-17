@@ -429,3 +429,19 @@ This project is licensed under the MIT License. See the LICENSE file for details
 ## Support
 
 For questions or support, open an issue on GitHub or contact us at <support@chatfin.ai>.
+
+
+## Learn More
+
+For more information, visit the official website:  
+👉 [ChatFin – AI Finance Platform](https://chatfin.ai)
+
+Connect with us on LinkedIn:  
+👉 [ChatFin LinkedIn](https://www.linkedin.com/company/94238033/)
+
+Explore our SuiteApp listing on NetSuite:  
+👉 [ChatFin AI for NetSuite – SuiteApp](https://www.suiteapp.com/Chatfin-AI-for-NetSuite)
+
+Read our latest press release:  
+👉 [ChatFin Launches Next-Gen AI Releases to Revolutionize Finance](https://www.openpr.com/news/4205936/chatfin-launches-next-gen-ai-releases-to-revolutionize-finance)
+
