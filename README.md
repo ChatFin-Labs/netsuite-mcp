@@ -5,7 +5,7 @@
 
 A comprehensive Model Context Protocol (MCP) server for accessing NetSuite data through RESTlets and SuiteQL queries. This server provides extensive NetSuite integration capabilities with support for financial data, customer information, transactions, and more.
 
-## FIND US 
+## Find Us 
 
 Visit our official website:  
 👉 [ChatFin – AI Finance Platform](https://chatfin.ai)
